@@ -14,9 +14,9 @@ net = np.random.normal(100, 15, n_points)
 
 # inject anomalies
 anomaly_idx = np.random.choice(n_points, size=60, replace=False)
-cpu[anomaly_idx] += np.random.normal(50, 10, len(anomaly_idx))
-mem[anomaly_idx] += np.random.normal(30, 5, len(anomaly_idx))
-net[anomaly_idx] += np.random.normal(200, 30, len(anomaly_idx))
+cpu[anomaly_idx] += 40
+mem[anomaly_idx] -= 25
+net[anomaly_idx] += 150
 
 labels = np.zeros(n_points)
 labels[anomaly_idx] = 1
