@@ -1,7 +1,13 @@
 import numpy as np
 import pandas as pd
+import argparse
 
-df = pd.read_csv("data/processed.csv")
+parser = argparse.ArgumentParser()
+parser.add_argument("--input", required=True)
+parser.add_argument("--output", required=True)
+args = parser.parse_args()
+
+df = pd.read_csv(args.input)
 X = df[["cpu", "mem", "net"]].values
 
 # normalize
@@ -42,5 +48,5 @@ for x in test:
 
 df["nsa_anomaly"] = [0]*1000 + labels
 print("Total NSA anomalies:", sum(df["nsa_anomaly"]))
-df.to_csv("data/nsa_output.csv", index=False)
-print("NSA detection complete. Results saved to data/nsa_output.csv")
+df.to_csv(args.output, index=False)
+print(f"NSA detection complete. Results saved to {args.output}")

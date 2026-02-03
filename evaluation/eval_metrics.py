@@ -1,7 +1,12 @@
 import pandas as pd
 from sklearn.metrics import precision_score, recall_score
+import argparse
 
-df = pd.read_csv("data/nsa_output.csv")
+parser = argparse.ArgumentParser()
+parser.add_argument("--input", required=True)
+args = parser.parse_args()
+
+df = pd.read_csv(args.input)
 
 y_true = df["label"]
 y_pred = df["nsa_anomaly"]
