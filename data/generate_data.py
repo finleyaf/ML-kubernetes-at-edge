@@ -41,16 +41,12 @@ if args.mode == "subtle":
         #net[anomaly_idx] += 150
         labels[i] = 1
 
-    # outfile already set based on mode
-
 elif args.mode == "sustained":
     for i in anomaly_idx:
         cpu[i:i+30] += 50
         mem[i:i+30] -= 30
         net[i:i+30] += 200
         labels[i:i+30] = 1
-
-    # outfile already set based on mode
 
 df = pd.DataFrame({
     "time": time,
