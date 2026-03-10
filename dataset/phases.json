@@ -1,0 +1,7 @@
+[
+  {"type": "baseline", "start": 1773167126, "end": 1773167246},
+  {"type": "stress", "name": "cpu", "start": 1773167246, "end": 1773167369},
+  {"type": "stress", "name": "memory", "start": 1773167369, "end": 1773167491},
+  {"type": "stress", "name": "io", "start": 1773167491, "end": 1773167614},
+  {"type": "recovery", "start": 1773167614, "end": 1773167734}
+]

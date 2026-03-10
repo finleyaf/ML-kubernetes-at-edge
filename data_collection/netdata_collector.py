@@ -35,61 +35,69 @@ while True:
 
     for node in nodes:
 
-        cpu = requests.get(
-            f"{BASE_URL}/host/{node}/api/v1/data",
-            params={
-                "chart":"system.cpu",
-                "after":-1,
-                "points":1,
-                "options":"percentage"
-            }
-        ).json()
+        try:
+            cpu = requests.get(
+                f"{BASE_URL}/host/{node}/api/v1/data",
+                params={
+                    "chart":"system.cpu",
+                    "after":-1,
+                    "points":1,
+                    "options":"percentage"
+                },
+                timeout=5
+            ).json()
 
-        ram = requests.get(
-            f"{BASE_URL}/host/{node}/api/v1/data",
-            params={
-                "chart":"system.ram",
-                "after":-1,
-                "points":1
-            }
-        ).json()
+            ram = requests.get(
+                f"{BASE_URL}/host/{node}/api/v1/data",
+                params={
+                    "chart":"system.ram",
+                    "after":-1,
+                    "points":1
+                },
+                timeout=5
+            ).json()
 
-        net = requests.get(
-            f"{BASE_URL}/host/{node}/api/v1/data",
-            params={
-                "chart":"system.net",
-                "after":-1,
-                "points":1
-            }
-        ).json()
+            net = requests.get(
+                f"{BASE_URL}/host/{node}/api/v1/data",
+                params={
+                    "chart":"system.net",
+                    "after":-1,
+                    "points":1
+                },
+                timeout=5
+            ).json()
 
-        load = requests.get(
-            f"{BASE_URL}/host/{node}/api/v1/data",
-            params={
-                "chart":"system.load",
-                "after":-1,
-                "points":1
-            }
-        ).json()
+            load = requests.get(
+                f"{BASE_URL}/host/{node}/api/v1/data",
+                params={
+                    "chart":"system.load",
+                    "after":-1,
+                    "points":1
+                },
+                timeout=5
+            ).json()
 
-        cpu_row = cpu["data"][0]
-        ram_row = ram["data"][0]
-        net_row = net["data"][0]
-        load_row = load["data"][0]
+            cpu_row = cpu["data"][0]
+            ram_row = ram["data"][0]
+            net_row = net["data"][0]
+            load_row = load["data"][0]
 
-        writer.writerow([
-            timestamp,
-            node,
-            cpu_row[6],
-            cpu_row[7],
-            cpu_row[9],
-            ram_row[1],
-            abs(net_row[1]),
-            abs(net_row[2]),
-            load_row[1]
-        ])
+            writer.writerow([
+                timestamp,
+                node,
+                cpu_row[6],
+                cpu_row[7],
+                cpu_row[9],
+                ram_row[1],
+                abs(net_row[1]),
+                abs(net_row[2]),
+                load_row[1]
+            ])
 
-        print(f"{node} collected")
+            print(f"{node} collected")
+
+        except Exception as e:
+            print(f"{node} skipped: {e}")
 
     file.flush()
 
