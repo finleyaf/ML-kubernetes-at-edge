@@ -1,0 +1,16 @@
+{
+  "method": "k-means",
+  "k": 2,
+  "threshold": 0.5360903555659247,
+  "accuracy": 0.65625,
+  "precision": 0.18181818181818182,
+  "recall": 0.03389830508474576,
+  "f1_score": 0.05714285714285714,
+  "true_positives": 2,
+  "false_positives": 9,
+  "true_negatives": 124,
+  "false_negatives": 57,
+  "total_samples": 192,
+  "total_anomalies": 59,
+  "detected_anomalies": 11
+}

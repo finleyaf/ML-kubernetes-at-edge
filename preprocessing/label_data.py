@@ -16,10 +16,15 @@ with open(args.phases) as f:
 # initialise all labels as normal (0)
 df["label"] = 0
 
-# mark stress phases as anomalous (1)
+# mark stress phases as anomalous only for the targeted node
 for phase in phases:
     if phase["type"] == "stress":
-        mask = (df["timestamp"] >= phase["start"]) & (df["timestamp"] <= phase["end"])
+        time_mask = (df["timestamp"] >= phase["start"]) & (df["timestamp"] <= phase["end"])
+        target_node = phase.get("target")
+        if target_node:
+            mask = time_mask & (df["node"] == target_node)
+        else:
+            mask = time_mask
         df.loc[mask, "label"] = 1
 
 normal_count = (df["label"] == 0).sum()

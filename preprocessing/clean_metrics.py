@@ -6,9 +6,15 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--input", required=True, help="Path to raw dataset CSV")
 parser.add_argument("--output", required=True, help="Path to save processed CSV")
 parser.add_argument("--window", type=int, default=10, help="Rolling mean window size")
+parser.add_argument("--node", type=str, default=None, help="Filter to a specific node (e.g. k3s-worker-2)")
 args = parser.parse_args()
 
 df = pd.read_csv(args.input)
+
+# optional node filter
+if args.node:
+    df = df[df["node"] == args.node].copy()
+    print(f"Filtered to node: {args.node} ({len(df)} rows)")
 
 # combine cpu_user + cpu_system into a single cpu feature (matching synthetic 'cpu')
 df["cpu"] = df["cpu_user"] + df["cpu_system"]
