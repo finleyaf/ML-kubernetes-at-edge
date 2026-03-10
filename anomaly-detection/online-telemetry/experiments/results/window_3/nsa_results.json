@@ -1,0 +1,17 @@
+{
+  "method": "nsa",
+  "num_detectors_generated": 300,
+  "num_detectors_requested": 300,
+  "radius": 0.15,
+  "accuracy": 0.9322916666666666,
+  "precision": 1.0,
+  "recall": 0.7796610169491526,
+  "f1_score": 0.8761904761904762,
+  "true_positives": 46,
+  "false_positives": 0,
+  "true_negatives": 133,
+  "false_negatives": 13,
+  "total_samples": 192,
+  "total_anomalies": 59,
+  "detected_anomalies": 46
+}
