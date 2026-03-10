@@ -1,7 +1,8 @@
 [
-  {"type": "baseline", "start": 1773168484, "end": 1773168604},
-  {"type": "stress", "name": "cpu", "target": "k3s-worker-2", "start": 1773168604, "end": 1773168727},
-  {"type": "stress", "name": "memory", "target": "k3s-control", "start": 1773168727, "end": 1773168850},
-  {"type": "stress", "name": "io", "target": "k3s-worker-2", "start": 1773168850, "end": 1773168975},
-  {"type": "recovery", "start": 1773168975, "end": 1773169095}
+  {"type": "baseline", "start": 1773171219, "end": 1773171339},
+  {"type": "stress", "name": "cpu", "target": "k3s-worker-2", "start": 1773171339, "end": 1773171462},
+  {"type": "stress", "name": "memory", "target": "k3s-control", "start": 1773171462, "end": 1773171584},
+  {"type": "stress", "name": "io", "target": "k3s-worker-2", "start": 1773171584, "end": 1773171710},
+  {"type": "stress", "name": "mixed", "target": "k3s-worker-3", "start": 1773171710, "end": 1773171833},
+  {"type": "recovery", "start": 1773171833, "end": 1773171953}
 ]

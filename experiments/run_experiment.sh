@@ -7,6 +7,7 @@ ZONE="europe-west2-c"
 
 CONTROL="k3s-control"
 WORKER="k3s-worker-2"
+WORKER2="k3s-worker-3"
 
 RAW_DATA="$PROJECT_DIR/dataset/dataset.csv"
 LABELLED_DATA="$PROJECT_DIR/dataset/labelled.csv"
@@ -47,6 +48,12 @@ gcloud compute ssh $WORKER --zone=$ZONE --command="stress --io 4 --timeout 120"
 IO_END=$(date +%s)
 echo "  {\"type\": \"stress\", \"name\": \"io\", \"target\": \"$WORKER\", \"start\": $IO_START, \"end\": $IO_END}," >> "$PHASES_FILE"
 
+MIXED_START=$(date +%s)
+echo "Mixed stress on worker-3"
+gcloud compute ssh $WORKER2 --zone=$ZONE --command="stress --cpu 1 --vm 1 --vm-bytes 512M --timeout 120"
+MIXED_END=$(date +%s)
+echo "  {\"type\": \"stress\", \"name\": \"mixed\", \"target\": \"$WORKER2\", \"start\": $MIXED_START, \"end\": $MIXED_END}," >> "$PHASES_FILE"
+
 RECOVERY_START=$(date +%s)
 echo "Recovery phase (2 minutes)"
 sleep 120
@@ -75,28 +82,32 @@ python "$PROJECT_DIR/preprocessing/label_data.py" \
 for WINDOW in 3 5 10; do
     echo ""
     echo "========================================"
-    echo "  Window size: $WINDOW (worker-only)"
+    echo "  Window size: $WINDOW"
     echo "========================================"
 
     EXPERIMENT_DIR="$RESULTS_DIR/window_${WINDOW}"
-    PROCESSED="$PROJECT_DIR/dataset/processed_w${WINDOW}.csv"
 
-    echo "Preprocessing (window=$WINDOW, node=$WORKER)..."
-    python "$PROJECT_DIR/preprocessing/clean_metrics.py" \
-        --input "$LABELLED_DATA" \
-        --output "$PROCESSED" \
-        --window "$WINDOW" \
-        --node "$WORKER"
+    for NODE in "$WORKER" "$WORKER2"; do
+        NODE_SHORT=$(echo "$NODE" | sed 's/k3s-//')
+        PROCESSED="$PROJECT_DIR/dataset/processed_w${WINDOW}_${NODE_SHORT}.csv"
 
-    echo "Running K-Means detection..."
-    python "$PROJECT_DIR/experiments/detection/kmeans_detector.py" \
-        --input "$PROCESSED" \
-        --output "$EXPERIMENT_DIR/kmeans_results.json"
+        echo "Preprocessing (window=$WINDOW, node=$NODE)..."
+        python "$PROJECT_DIR/preprocessing/clean_metrics.py" \
+            --input "$LABELLED_DATA" \
+            --output "$PROCESSED" \
+            --window "$WINDOW" \
+            --node "$NODE"
 
-    echo "Running NSA detection..."
-    python "$PROJECT_DIR/experiments/detection/nsa_detector.py" \
-        --input "$PROCESSED" \
-        --output "$EXPERIMENT_DIR/nsa_results.json"
+        echo "Running K-Means detection ($NODE)..."
+        python "$PROJECT_DIR/experiments/detection/kmeans_detector.py" \
+            --input "$PROCESSED" \
+            --output "$EXPERIMENT_DIR/kmeans_results_${NODE_SHORT}.json"
+
+        echo "Running NSA detection ($NODE)..."
+        python "$PROJECT_DIR/experiments/detection/nsa_detector.py" \
+            --input "$PROCESSED" \
+            --output "$EXPERIMENT_DIR/nsa_results_${NODE_SHORT}.json"
+    done
 done
 
 echo ""

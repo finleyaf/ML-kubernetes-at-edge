@@ -7,7 +7,8 @@ BASE_URL = "http://localhost:20000"
 
 nodes = [
     "k3s-control",
-    "k3s-worker-2"
+    "k3s-worker-2",
+    "k3s-worker-3"
 ]
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
