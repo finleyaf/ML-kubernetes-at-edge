@@ -1,0 +1,110 @@
+\chapter{Replication report}
+\label{chapter2}
+
+\section{Anomaly Detection Replication}
+
+This section presents a replication and analysis of a lightweight anomaly detection approach proposed for edge-based Kubernetes clusters. The goal is not only to reproduce reported behaviour, but also to evaluate its robustness under realistic edge preprocessing conditions.
+
+\subsection{Introduction}
+
+Edge Kubernetes environments require lightweight monitoring: lightweight since edge computing exists to achieve low latency and high bandwidth, any added computation must be optimized (resource constraints, intermittent connectivity, geographic distribution, and capabilities for autonomous operation.
+
+Anomaly detection is often proposed to support scheduling decisions: anomaly detection supports lightweight monitoring by allowing decisions on nodes to happen in real-time. Selective data transfer reduces network load and storage cost. Other benefits include added security, predictive maintenance, context awareness, and system autonomy.
+
+Why k-means + NSA for anomaly detection: k-means provides a simple single feature analysis on large un-labeled datasets, paired with NSA which is lightweight multi-feature analysis which works well in diverse environments.
+
+\subsection{Method Overview}
+
+A combination of k-means and NSA detection is shown to be successful in {paper}.
+
+The algorithm for NSA takes as input three sets covering a self set, a monitor set, and a detector set; a variable n representing the maxiumum detectors. The output is a labeled set M where for each member m is either 'self' or 'non-self'.
+
+Why NSA suits edge...
+
+\subsection{Experimental Setup (offline)}
+
+An offline evaluation was conducted to isolate detector behaviour from runtime cluster effects, allowing for algorithm evaluation and sensitivity analysis.
+
+\subsubsection{Metrics}
+
+Synthetic edge metrics are generated using normal distributions. Two manners of anomaly injection are used, subtle and sustained, which present varying sensitivity to pre-processing.
+
+Subtle point anomalies were designed to emulate transient workload disturbances common in edge environments. However, after rolling-window smoothing and feature normalisation, these anomalies became geometrically embedded within the normal data distribution. As a result, no distinct non-self region emerged, rendering NSA incapable of detecting such deviations by design.
+
+In contrast, sustained multi-dimensional anomalies introduce prolonged deviations in system behaviour, forming a distinct abnormal operating regime. When excessive smoothing is avoided, this regime remains geometrically separable from normal workloads, allowing NSA to successfully identify non-self regions.
+
+\subsubsection{Preprocessing}
+
+Preprocessing was completed to achieve edge realism. Edge monitoring systems must trade precision for stability, bandwidth efficiency, and robustness.
+
+Rolling-window smoothing was applied to each resource metric to reflect realistic edge telemetry behaviour, where lightweight monitoring systems aggregate measurements over short intervals to suppress noise and reduce communication overhead. This approach stabilises metric trends while preserving sustained workload changes relevant for scheduling decisions.
+
+Feature normalisation was applied to ensure scale invariance across heterogeneous resource metrics, enabling fair distance-based comparison between CPU, memory, and network utilisation. This reflects standard practice in ML-driven resource management pipelines and prevents dominance by high-magnitude features.
+
+While such preprocessing improves robustness and reflects realistic edge monitoring constraints, it also reduces the geometric separability of subtle anomalies, highlighting a fundamental trade-off between noise suppression and anomaly detectability.
+
+\subsubsection{NSA Configuration}
+
+All NSA parameters were held constant across experiments to ensure fair comparison.
+
+\begin{table}
+    \centering
+    \begin{tabular}{cc}
+         Detector count:&  200\\
+         Detector radius:&  1.5\\
+         Feature space:&  constant\\
+ Training type:&normal-only\\ 
+    \end{tabular}
+    \caption{Parameters}
+\end{table}
+
+\subsection{Evaluation Methodology}
+
+Point-wise detection was used to discover individual spikes, which is suitable for scheduler evaluation since it gives high granularity and precision, resulting in the exact identification of decision successes and failures. Precision and recall metrics provided a balanced evaluation; measuring both the accuracy of the detected nodes and the coverage of total positive nodes found.  
+
+The results were interpreted by calculating the distance from the normal of each node that was detected to decide whether it was located in the self or non-self region. If a large proportion of detected nodes were located in the self region, this signaled over sensitivity to the preprocessing pipeline.
+
+\subsection{Results and Analysis}
+
+\subsubsection{Dataset A: Subtle Anomalies}
+
+
+\begin{table}
+    \centering
+    \begin{tabular}{cc}
+         Distance from normal&  0.25\\
+         Precision&  0.0\\
+         Recall&  1.0\\
+    \end{tabular}
+    \caption{Results: 1}
+\end{table}
+
+Anomalies were geometrically embedded within the normal distribution, leaving no non-self region for NSA to cover.
+
+\subsubsection{Dataset B: Sustained Anomalies (default window size)}
+
+\begin{table}
+    \centering
+    \begin{tabular}{cc}
+         Distance from normal&  0.34\\
+         Precision&  0.0\\
+         Recall&  1.0\\
+    \end{tabular}
+    \caption{Results: 2}
+\end{table}
+
+Due to excessive smoothing, the separability of the anomalies collapsed, meaning despite the anomalies being stronger; NSA was unable to detect them.
+
+\subsubsection{Dataset B: Sustained Anomalies (window size = 2)}
+
+\begin{table}
+    \centering
+    \begin{tabular}{cc}
+         Distance from normal&  1.93\\
+         Precision&  0.48\\
+         Recall&  1.0\\
+    \end{tabular}
+    \caption{Results: 3}
+\end{table}
+
+When a smaller window was applied, NSA performed as expected when its assumptions held. NSA was still conservative but a clear non-self region existed.
