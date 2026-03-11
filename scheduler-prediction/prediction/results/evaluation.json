@@ -1,0 +1,71 @@
+{
+  "window": 10,
+  "horizon": 5,
+  "features": [
+    "cpu_user",
+    "cpu_system",
+    "ram_used",
+    "net_received",
+    "net_sent"
+  ],
+  "nodes": {
+    "k3s-worker-2": {
+      "num_predictions": 194,
+      "avg_inference_time_ms": 0.0588,
+      "max_inference_time_ms": 0.258,
+      "mae_per_feature": {
+        "cpu_user": 0.1177,
+        "cpu_system": 0.1168,
+        "ram_used": 0.0433,
+        "net_received": 0.1018,
+        "net_sent": 0.0544
+      },
+      "rmse_per_feature": {
+        "cpu_user": 0.1872,
+        "cpu_system": 0.1898,
+        "ram_used": 0.0731,
+        "net_received": 0.1404,
+        "net_sent": 0.1198
+      },
+      "smape_per_feature": {
+        "cpu_user": 111.16,
+        "cpu_system": 91.16,
+        "ram_used": 61.66,
+        "net_received": 18.27,
+        "net_sent": 53.71
+      },
+      "mae_mean": 0.0868,
+      "rmse_mean": 0.1421,
+      "smape_mean": 67.19
+    },
+    "k3s-worker-3": {
+      "num_predictions": 196,
+      "avg_inference_time_ms": 0.0557,
+      "max_inference_time_ms": 0.1619,
+      "mae_per_feature": {
+        "cpu_user": 0.1299,
+        "cpu_system": 0.147,
+        "ram_used": 0.162,
+        "net_received": 0.0702,
+        "net_sent": 0.06
+      },
+      "rmse_per_feature": {
+        "cpu_user": 0.186,
+        "cpu_system": 0.2105,
+        "ram_used": 0.2346,
+        "net_received": 0.1066,
+        "net_sent": 0.1185
+      },
+      "smape_per_feature": {
+        "cpu_user": 110.81,
+        "cpu_system": 119.65,
+        "ram_used": 41.55,
+        "net_received": 63.12,
+        "net_sent": 105.82
+      },
+      "mae_mean": 0.1138,
+      "rmse_mean": 0.1712,
+      "smape_mean": 88.19
+    }
+  }
+}

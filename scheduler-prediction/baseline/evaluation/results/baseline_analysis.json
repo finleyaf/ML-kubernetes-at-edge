@@ -1,0 +1,157 @@
+{
+  "normal": {
+    "total_pods": 15,
+    "node_placements": {
+      "k3s-worker-3": 10,
+      "k3s-worker-2": 5
+    },
+    "avg_scheduling_latency_s": 0.0667,
+    "avg_startup_time_s": 5.5333,
+    "avg_total_time_s": 5.6,
+    "workloads": {
+      "cpu": {
+        "count": 5,
+        "scheduling_latency": {
+          "mean": 0.0,
+          "std": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "startup_time": {
+          "mean": 4.4,
+          "std": 3.9115,
+          "min": 1.0,
+          "max": 10.0
+        },
+        "total_time": {
+          "mean": 4.4,
+          "std": 3.9115,
+          "min": 1.0,
+          "max": 10.0
+        }
+      },
+      "memory": {
+        "count": 5,
+        "scheduling_latency": {
+          "mean": 0.0,
+          "std": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "startup_time": {
+          "mean": 3.0,
+          "std": 2.3452,
+          "min": 1.0,
+          "max": 6.0
+        },
+        "total_time": {
+          "mean": 3.0,
+          "std": 2.3452,
+          "min": 1.0,
+          "max": 6.0
+        }
+      },
+      "mixed": {
+        "count": 5,
+        "scheduling_latency": {
+          "mean": 0.2,
+          "std": 0.4472,
+          "min": 0.0,
+          "max": 1.0
+        },
+        "startup_time": {
+          "mean": 9.2,
+          "std": 4.9699,
+          "min": 4.0,
+          "max": 16.0
+        },
+        "total_time": {
+          "mean": 9.4,
+          "std": 4.7223,
+          "min": 5.0,
+          "max": 16.0
+        }
+      }
+    }
+  },
+  "stress": {
+    "total_pods": 15,
+    "node_placements": {
+      "k3s-worker-3": 12,
+      "k3s-worker-2": 3
+    },
+    "avg_scheduling_latency_s": 0.0667,
+    "avg_startup_time_s": 9.6,
+    "avg_total_time_s": 9.6667,
+    "workloads": {
+      "cpu": {
+        "count": 5,
+        "scheduling_latency": {
+          "mean": 0.2,
+          "std": 0.4472,
+          "min": 0.0,
+          "max": 1.0
+        },
+        "startup_time": {
+          "mean": 7.6,
+          "std": 4.827,
+          "min": 2.0,
+          "max": 14.0
+        },
+        "total_time": {
+          "mean": 7.8,
+          "std": 5.02,
+          "min": 2.0,
+          "max": 14.0
+        }
+      },
+      "memory": {
+        "count": 5,
+        "scheduling_latency": {
+          "mean": 0.0,
+          "std": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "startup_time": {
+          "mean": 15.2,
+          "std": 11.4543,
+          "min": 5.0,
+          "max": 34.0
+        },
+        "total_time": {
+          "mean": 15.2,
+          "std": 11.4543,
+          "min": 5.0,
+          "max": 34.0
+        }
+      },
+      "mixed": {
+        "count": 5,
+        "scheduling_latency": {
+          "mean": 0.0,
+          "std": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "startup_time": {
+          "mean": 6.0,
+          "std": 4.0,
+          "min": 1.0,
+          "max": 12.0
+        },
+        "total_time": {
+          "mean": 6.0,
+          "std": 4.0,
+          "min": 1.0,
+          "max": 12.0
+        }
+      }
+    }
+  },
+  "comparison": {
+    "scheduling_latency_increase": 0.0,
+    "startup_time_increase": 4.0667,
+    "stress_node_placement_pct": 20.0
+  }
+}
