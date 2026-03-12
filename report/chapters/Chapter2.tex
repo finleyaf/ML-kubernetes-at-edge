@@ -7,27 +7,27 @@ This section presents a replication and analysis of a lightweight anomaly detect
 
 \subsection{Introduction}
 
-Edge Kubernetes environments require lightweight monitoring: lightweight since edge computing exists to achieve low latency and high bandwidth, any added computation must be optimized (resource constraints, intermittent connectivity, geographic distribution, and capabilities for autonomous operation.
+Edge Kubernetes environments demand monitoring solutions that are both effective and lightweight. Since edge computing exists to achieve low latency and high bandwidth, any added computation for monitoring must be carefully optimised to operate within resource constraints, intermittent connectivity, geographic distribution, and the need for autonomous operation \cite{rasouli2025false}.
 
-Anomaly detection is often proposed to support scheduling decisions: anomaly detection supports lightweight monitoring by allowing decisions on nodes to happen in real-time. Selective data transfer reduces network load and storage cost. Other benefits include added security, predictive maintenance, context awareness, and system autonomy.
+Anomaly detection supports lightweight monitoring by enabling real-time decisions about node health. By identifying abnormal behaviour locally, edge nodes can selectively transfer only relevant data, reducing network load and storage cost. Additional benefits include improved security posture, predictive maintenance capabilities, context-aware resource management, and greater system autonomy \cite{fritzsche2024lightweight}.
 
-Why k-means + NSA for anomaly detection: k-means provides a simple single feature analysis on large un-labeled datasets, paired with NSA which is lightweight multi-feature analysis which works well in diverse environments.
+For anomaly detection in this context, K-means and the Negative Selection Algorithm (NSA) offer complementary strengths. K-means provides computationally simple clustering-based analysis on large unlabelled datasets, while NSA offers lightweight multi-dimensional classification that is well-suited to the diverse operating conditions of edge environments \cite{fritzsche2024lightweight}.
 
 \subsection{Method Overview}
 
-A combination of k-means and NSA detection is shown to be successful in {paper}.
+Fritzsche et al.\ demonstrated that a combination of K-means and NSA detection achieves effective anomaly detection in edge Kubernetes clusters \cite{fritzsche2024lightweight}. This section replicates their approach under controlled conditions to evaluate detector behaviour and sensitivity to preprocessing.
 
-The algorithm for NSA takes as input three sets covering a self set, a monitor set, and a detector set; a variable n representing the maxiumum detectors. The output is a labeled set M where for each member m is either 'self' or 'non-self'.
+The NSA algorithm takes as input three sets: a \textit{self} set representing normal behaviour, a \textit{monitor} set of observations to classify, and a \textit{detector} set generated during training. Given a maximum detector count $n$, detectors are randomly generated in feature space and retained only if they do not match any self-region data point. At runtime, each observation in the monitor set is classified as \textit{self} or \textit{non-self} based on proximity to detectors.
 
-Why NSA suits edge...
+NSA is well-suited to edge environments because it requires only normal-behaviour training data (one-class learning), imposes minimal computational overhead at inference time, and naturally adapts to multi-dimensional feature spaces without requiring labelled anomaly examples.
 
 \subsection{Experimental Setup (offline)}
 
-An offline evaluation was conducted to isolate detector behaviour from runtime cluster effects, allowing for algorithm evaluation and sensitivity analysis.
+An offline evaluation was conducted to isolate detector behaviour from runtime cluster effects, enabling controlled algorithm evaluation and sensitivity analysis independent of network variability or collection artefacts.
 
 \subsubsection{Metrics}
 
-Synthetic edge metrics are generated using normal distributions. Two manners of anomaly injection are used, subtle and sustained, which present varying sensitivity to pre-processing.
+Synthetic edge metrics were generated using normal distributions to simulate CPU, memory, and network utilisation under typical operating conditions. Two modes of anomaly injection were used---subtle (transient point anomalies) and sustained (prolonged multi-dimensional deviations)---which present varying sensitivity to preprocessing.
 
 Subtle point anomalies were designed to emulate transient workload disturbances common in edge environments. However, after rolling-window smoothing and feature normalisation, these anomalies became geometrically embedded within the normal data distribution. As a result, no distinct non-self region emerged, rendering NSA incapable of detecting such deviations by design.
 
@@ -47,15 +47,20 @@ While such preprocessing improves robustness and reflects realistic edge monitor
 
 All NSA parameters were held constant across experiments to ensure fair comparison.
 
-\begin{table}
+\begin{table}[h]
     \centering
-    \begin{tabular}{cc}
-         Detector count:&  200\\
-         Detector radius:&  1.5\\
-         Feature space:&  constant\\
- Training type:&normal-only\\ 
+    \begin{tabular}{ll}
+        \hline
+        \textbf{Parameter} & \textbf{Value} \\
+        \hline
+        Detector count & 200 \\
+        Detector radius & 1.5 \\
+        Feature space & 3-dimensional (CPU, memory, network) \\
+        Training type & Normal-only (one-class) \\
+        \hline
     \end{tabular}
-    \caption{Parameters}
+    \caption{NSA configuration parameters for offline evaluation.}
+    \label{tab:nsa-params}
 \end{table}
 
 \subsection{Evaluation Methodology}
@@ -69,42 +74,57 @@ The results were interpreted by calculating the distance from the normal of each
 \subsubsection{Dataset A: Subtle Anomalies}
 
 
-\begin{table}
+\begin{table}[h]
     \centering
-    \begin{tabular}{cc}
-         Distance from normal&  0.25\\
-         Precision&  0.0\\
-         Recall&  1.0\\
+    \begin{tabular}{ll}
+        \hline
+        \textbf{Metric} & \textbf{Value} \\
+        \hline
+        Distance from normal & 0.25 \\
+        Precision & 0.00 \\
+        Recall & 1.00 \\
+        \hline
     \end{tabular}
-    \caption{Results: 1}
+    \caption{NSA results on Dataset A: subtle point anomalies.}
+    \label{tab:results-subtle}
 \end{table}
 
-Anomalies were geometrically embedded within the normal distribution, leaving no non-self region for NSA to cover.
+The subtle anomalies were geometrically embedded within the normal distribution after preprocessing, leaving no distinct non-self region for NSA detectors to cover. While recall reached 1.0 (all points were flagged), precision was 0.0, indicating that the detector could not distinguish anomalous points from normal behaviour.
 
 \subsubsection{Dataset B: Sustained Anomalies (default window size)}
 
-\begin{table}
+\begin{table}[h]
     \centering
-    \begin{tabular}{cc}
-         Distance from normal&  0.34\\
-         Precision&  0.0\\
-         Recall&  1.0\\
+    \begin{tabular}{ll}
+        \hline
+        \textbf{Metric} & \textbf{Value} \\
+        \hline
+        Distance from normal & 0.34 \\
+        Precision & 0.00 \\
+        Recall & 1.00 \\
+        \hline
     \end{tabular}
-    \caption{Results: 2}
+    \caption{NSA results on Dataset B with default window size.}
+    \label{tab:results-sustained-default}
 \end{table}
 
-Due to excessive smoothing, the separability of the anomalies collapsed, meaning despite the anomalies being stronger; NSA was unable to detect them.
+Despite the anomalies being stronger and more prolonged than in Dataset A, excessive smoothing from the default rolling window collapsed their separability. The distance from normal (0.34) was marginally higher than Dataset A but still insufficient for NSA to establish a meaningful non-self boundary.
 
 \subsubsection{Dataset B: Sustained Anomalies (window size = 2)}
 
-\begin{table}
+\begin{table}[h]
     \centering
-    \begin{tabular}{cc}
-         Distance from normal&  1.93\\
-         Precision&  0.48\\
-         Recall&  1.0\\
+    \begin{tabular}{ll}
+        \hline
+        \textbf{Metric} & \textbf{Value} \\
+        \hline
+        Distance from normal & 1.93 \\
+        Precision & 0.48 \\
+        Recall & 1.00 \\
+        \hline
     \end{tabular}
-    \caption{Results: 3}
+    \caption{NSA results on Dataset B with reduced window size (w=2).}
+    \label{tab:results-sustained-w2}
 \end{table}
 
-When a smaller window was applied, NSA performed as expected when its assumptions held. NSA was still conservative but a clear non-self region existed.
+With the reduced window size, the distance from normal increased substantially to 1.93, confirming that a geometrically distinct non-self region emerged. NSA achieved precision of 0.48 while maintaining perfect recall, indicating that the detector successfully identified all anomalous periods albeit with some false positives during transitional phases. This result validates that NSA performs as expected when its core assumption---geometric separability between normal and anomalous behaviour---is preserved through appropriate preprocessing choices.
