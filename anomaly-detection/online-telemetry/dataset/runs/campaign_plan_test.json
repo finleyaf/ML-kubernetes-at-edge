@@ -1,0 +1,252 @@
+{
+  "meta": {
+    "runs": 6,
+    "control_ratio": 0.33,
+    "seed": 7,
+    "baseline": 60,
+    "recovery": 60,
+    "durations": [
+      45,
+      60,
+      75
+    ]
+  },
+  "runs": [
+    {
+      "run_id": "run_003",
+      "kind": "stress",
+      "created_at": "2026-03-20T15:29:48.176674+00:00",
+      "phases": [
+        {
+          "type": "baseline",
+          "name": "baseline",
+          "duration": 60
+        },
+        {
+          "type": "stress",
+          "name": "memory",
+          "target": "k3s-control",
+          "intensity": "high",
+          "duration": 75,
+          "command": "stress --vm 2 --vm-bytes 1G --timeout 75"
+        },
+        {
+          "type": "stress",
+          "name": "io",
+          "target": "k3s-worker-2",
+          "intensity": "low",
+          "duration": 60,
+          "command": "stress --io 2 --timeout 60"
+        },
+        {
+          "type": "stress",
+          "name": "mixed",
+          "target": "k3s-worker-3",
+          "intensity": "low",
+          "duration": 45,
+          "command": "stress --cpu 1 --vm 1 --vm-bytes 256M --timeout 45"
+        },
+        {
+          "type": "stress",
+          "name": "cpu",
+          "target": "k3s-worker-2",
+          "intensity": "low",
+          "duration": 75,
+          "command": "stress --cpu 1 --timeout 75"
+        },
+        {
+          "type": "recovery",
+          "name": "recovery",
+          "duration": 60
+        }
+      ],
+      "order": 1
+    },
+    {
+      "run_id": "run_001",
+      "kind": "stress",
+      "created_at": "2026-03-20T15:29:48.176185+00:00",
+      "phases": [
+        {
+          "type": "baseline",
+          "name": "baseline",
+          "duration": 60
+        },
+        {
+          "type": "stress",
+          "name": "mixed",
+          "target": "k3s-worker-3",
+          "intensity": "low",
+          "duration": 75,
+          "command": "stress --cpu 1 --vm 1 --vm-bytes 256M --timeout 75"
+        },
+        {
+          "type": "stress",
+          "name": "memory",
+          "target": "k3s-control",
+          "intensity": "high",
+          "duration": 45,
+          "command": "stress --vm 2 --vm-bytes 1G --timeout 45"
+        },
+        {
+          "type": "stress",
+          "name": "cpu",
+          "target": "k3s-worker-2",
+          "intensity": "medium",
+          "duration": 45,
+          "command": "stress --cpu 2 --timeout 45"
+        },
+        {
+          "type": "stress",
+          "name": "io",
+          "target": "k3s-worker-2",
+          "intensity": "low",
+          "duration": 75,
+          "command": "stress --io 2 --timeout 75"
+        },
+        {
+          "type": "recovery",
+          "name": "recovery",
+          "duration": 60
+        }
+      ],
+      "order": 2
+    },
+    {
+      "run_id": "run_004",
+      "kind": "stress",
+      "created_at": "2026-03-20T15:29:48.176681+00:00",
+      "phases": [
+        {
+          "type": "baseline",
+          "name": "baseline",
+          "duration": 60
+        },
+        {
+          "type": "stress",
+          "name": "mixed",
+          "target": "k3s-worker-3",
+          "intensity": "low",
+          "duration": 75,
+          "command": "stress --cpu 1 --vm 1 --vm-bytes 256M --timeout 75"
+        },
+        {
+          "type": "stress",
+          "name": "cpu",
+          "target": "k3s-worker-2",
+          "intensity": "medium",
+          "duration": 75,
+          "command": "stress --cpu 2 --timeout 75"
+        },
+        {
+          "type": "stress",
+          "name": "memory",
+          "target": "k3s-control",
+          "intensity": "high",
+          "duration": 75,
+          "command": "stress --vm 2 --vm-bytes 1G --timeout 75"
+        },
+        {
+          "type": "stress",
+          "name": "io",
+          "target": "k3s-worker-2",
+          "intensity": "low",
+          "duration": 45,
+          "command": "stress --io 2 --timeout 45"
+        },
+        {
+          "type": "recovery",
+          "name": "recovery",
+          "duration": 60
+        }
+      ],
+      "order": 3
+    },
+    {
+      "run_id": "run_002",
+      "kind": "stress",
+      "created_at": "2026-03-20T15:29:48.176667+00:00",
+      "phases": [
+        {
+          "type": "baseline",
+          "name": "baseline",
+          "duration": 60
+        },
+        {
+          "type": "stress",
+          "name": "mixed",
+          "target": "k3s-worker-3",
+          "intensity": "medium",
+          "duration": 60,
+          "command": "stress --cpu 1 --vm 1 --vm-bytes 512M --timeout 60"
+        },
+        {
+          "type": "stress",
+          "name": "io",
+          "target": "k3s-worker-2",
+          "intensity": "low",
+          "duration": 45,
+          "command": "stress --io 2 --timeout 45"
+        },
+        {
+          "type": "stress",
+          "name": "cpu",
+          "target": "k3s-worker-2",
+          "intensity": "high",
+          "duration": 45,
+          "command": "stress --cpu 3 --timeout 45"
+        },
+        {
+          "type": "stress",
+          "name": "memory",
+          "target": "k3s-control",
+          "intensity": "low",
+          "duration": 60,
+          "command": "stress --vm 1 --vm-bytes 512M --timeout 60"
+        },
+        {
+          "type": "recovery",
+          "name": "recovery",
+          "duration": 60
+        }
+      ],
+      "order": 4
+    },
+    {
+      "run_id": "run_006",
+      "kind": "control",
+      "created_at": "2026-03-20T15:29:48.176700+00:00",
+      "phases": [
+        {
+          "type": "baseline",
+          "name": "baseline",
+          "duration": 60
+        },
+        {
+          "type": "recovery",
+          "name": "recovery",
+          "duration": 60
+        }
+      ],
+      "order": 5
+    },
+    {
+      "run_id": "run_005",
+      "kind": "control",
+      "created_at": "2026-03-20T15:29:48.176683+00:00",
+      "phases": [
+        {
+          "type": "baseline",
+          "name": "baseline",
+          "duration": 60
+        },
+        {
+          "type": "recovery",
+          "name": "recovery",
+          "duration": 60
+        }
+      ],
+      "order": 6
+    }
+  ]
+}

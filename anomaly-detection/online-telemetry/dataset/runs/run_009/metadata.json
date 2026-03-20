@@ -1,0 +1,19 @@
+{
+  "run_id": "run_009",
+  "kind": "stress",
+  "order": 5,
+  "zone": "europe-west2-c",
+  "nodes": [
+    "k3s-control",
+    "k3s-worker-2",
+    "k3s-worker-3"
+  ],
+  "collector_interval_s": 1.0,
+  "started_at": "2026-03-20T17:57:18.173652+00:00",
+  "paths": {
+    "raw": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_009/dataset.csv",
+    "labelled": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_009/labelled.csv",
+    "phases": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_009/phases.json",
+    "collector_log": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_009/collector.log"
+  }
+}

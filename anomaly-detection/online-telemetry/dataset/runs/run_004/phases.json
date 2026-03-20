@@ -1,0 +1,46 @@
+[
+  {
+    "type": "baseline",
+    "name": "baseline",
+    "start": 1774030420,
+    "end": 1774030540
+  },
+  {
+    "type": "stress",
+    "name": "mixed",
+    "start": 1774030540,
+    "end": 1774030633,
+    "target": "k3s-worker-3",
+    "intensity": "medium"
+  },
+  {
+    "type": "stress",
+    "name": "cpu",
+    "start": 1774030633,
+    "end": 1774030725,
+    "target": "k3s-worker-2",
+    "intensity": "low"
+  },
+  {
+    "type": "stress",
+    "name": "memory",
+    "start": 1774030725,
+    "end": 1774030847,
+    "target": "k3s-control",
+    "intensity": "low"
+  },
+  {
+    "type": "stress",
+    "name": "io",
+    "start": 1774030847,
+    "end": 1774030969,
+    "target": "k3s-worker-2",
+    "intensity": "medium"
+  },
+  {
+    "type": "recovery",
+    "name": "recovery",
+    "start": 1774030969,
+    "end": 1774031089
+  }
+]

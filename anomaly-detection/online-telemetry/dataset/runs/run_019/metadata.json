@@ -1,0 +1,19 @@
+{
+  "run_id": "run_019",
+  "kind": "control",
+  "order": 7,
+  "zone": "europe-west2-c",
+  "nodes": [
+    "k3s-control",
+    "k3s-worker-2",
+    "k3s-worker-3"
+  ],
+  "collector_interval_s": 1.0,
+  "started_at": "2026-03-20T18:13:38.241539+00:00",
+  "paths": {
+    "raw": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_019/dataset.csv",
+    "labelled": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_019/labelled.csv",
+    "phases": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_019/phases.json",
+    "collector_log": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_019/collector.log"
+  }
+}

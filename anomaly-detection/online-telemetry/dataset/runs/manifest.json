@@ -1,0 +1,157 @@
+{
+  "plan": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/campaign_plan.json",
+  "executed_at": "2026-03-20T17:18:38.086581+00:00",
+  "zone": "europe-west2-c",
+  "nodes": [
+    "k3s-control",
+    "k3s-worker-2",
+    "k3s-worker-3"
+  ],
+  "interval": 1.0,
+  "runs": [
+    {
+      "run_id": "run_013",
+      "kind": "stress",
+      "run_dir": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_013",
+      "raw_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_013/dataset.csv",
+      "labelled_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_013/labelled.csv",
+      "phases_json": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_013/phases.json"
+    },
+    {
+      "run_id": "run_007",
+      "kind": "stress",
+      "run_dir": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_007",
+      "raw_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_007/dataset.csv",
+      "labelled_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_007/labelled.csv",
+      "phases_json": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_007/phases.json"
+    },
+    {
+      "run_id": "run_009",
+      "kind": "stress",
+      "run_dir": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_009",
+      "raw_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_009/dataset.csv",
+      "labelled_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_009/labelled.csv",
+      "phases_json": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_009/phases.json"
+    },
+    {
+      "run_id": "run_011",
+      "kind": "stress",
+      "run_dir": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_011",
+      "raw_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_011/dataset.csv",
+      "labelled_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_011/labelled.csv",
+      "phases_json": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_011/phases.json"
+    },
+    {
+      "run_id": "run_019",
+      "kind": "control",
+      "run_dir": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_019",
+      "raw_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_019/dataset.csv",
+      "labelled_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_019/labelled.csv",
+      "phases_json": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_019/phases.json"
+    },
+    {
+      "run_id": "run_004",
+      "kind": "stress",
+      "run_dir": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_004",
+      "raw_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_004/dataset.csv",
+      "labelled_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_004/labelled.csv",
+      "phases_json": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_004/phases.json"
+    },
+    {
+      "run_id": "run_020",
+      "kind": "control",
+      "run_dir": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_020",
+      "raw_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_020/dataset.csv",
+      "labelled_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_020/labelled.csv",
+      "phases_json": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_020/phases.json"
+    },
+    {
+      "run_id": "run_014",
+      "kind": "stress",
+      "run_dir": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_014",
+      "raw_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_014/dataset.csv",
+      "labelled_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_014/labelled.csv",
+      "phases_json": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_014/phases.json"
+    },
+    {
+      "run_id": "run_002",
+      "kind": "stress",
+      "run_dir": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_002",
+      "raw_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_002/dataset.csv",
+      "labelled_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_002/labelled.csv",
+      "phases_json": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_002/phases.json"
+    },
+    {
+      "run_id": "run_016",
+      "kind": "control",
+      "run_dir": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_016",
+      "raw_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_016/dataset.csv",
+      "labelled_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_016/labelled.csv",
+      "phases_json": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_016/phases.json"
+    },
+    {
+      "run_id": "run_008",
+      "kind": "stress",
+      "run_dir": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_008",
+      "raw_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_008/dataset.csv",
+      "labelled_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_008/labelled.csv",
+      "phases_json": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_008/phases.json"
+    },
+    {
+      "run_id": "run_018",
+      "kind": "control",
+      "run_dir": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_018",
+      "raw_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_018/dataset.csv",
+      "labelled_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_018/labelled.csv",
+      "phases_json": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_018/phases.json"
+    },
+    {
+      "run_id": "run_010",
+      "kind": "stress",
+      "run_dir": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_010",
+      "raw_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_010/dataset.csv",
+      "labelled_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_010/labelled.csv",
+      "phases_json": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_010/phases.json"
+    },
+    {
+      "run_id": "run_001",
+      "kind": "stress",
+      "run_dir": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_001",
+      "raw_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_001/dataset.csv",
+      "labelled_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_001/labelled.csv",
+      "phases_json": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_001/phases.json"
+    },
+    {
+      "run_id": "run_017",
+      "kind": "control",
+      "run_dir": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_017",
+      "raw_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_017/dataset.csv",
+      "labelled_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_017/labelled.csv",
+      "phases_json": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_017/phases.json"
+    },
+    {
+      "run_id": "run_006",
+      "kind": "stress",
+      "run_dir": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_006",
+      "raw_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_006/dataset.csv",
+      "labelled_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_006/labelled.csv",
+      "phases_json": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_006/phases.json"
+    },
+    {
+      "run_id": "run_012",
+      "kind": "stress",
+      "run_dir": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_012",
+      "raw_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_012/dataset.csv",
+      "labelled_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_012/labelled.csv",
+      "phases_json": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_012/phases.json"
+    },
+    {
+      "run_id": "run_005",
+      "kind": "stress",
+      "run_dir": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_005",
+      "raw_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_005/dataset.csv",
+      "labelled_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_005/labelled.csv",
+      "phases_json": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/run_005/phases.json"
+    }
+  ]
+}

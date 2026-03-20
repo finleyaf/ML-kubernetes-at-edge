@@ -1,0 +1,429 @@
+{
+  "config": {
+    "runs_dir": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs",
+    "expected_nodes": [
+      "k3s-control",
+      "k3s-worker-2",
+      "k3s-worker-3"
+    ],
+    "min_rows": 250,
+    "min_anomaly_ratio": 0.05
+  },
+  "summary": {
+    "runs_total": 20,
+    "status_counts": {
+      "pass": 20,
+      "warn": 0,
+      "fail": 0
+    },
+    "rows_total": 12676,
+    "anomaly_rows_total": 2069,
+    "anomaly_ratio_total": 0.1632,
+    "stress_runs": 15,
+    "control_runs": 5,
+    "stress_avg_anomaly_ratio": 0.1867,
+    "control_anomaly_rows_total": 0
+  },
+  "runs": [
+    {
+      "run_id": "run_001",
+      "status": "pass",
+      "issues": [],
+      "kind": "stress",
+      "rows": 626,
+      "anomaly_rows": 119,
+      "anomaly_ratio": 0.1901,
+      "node_counts": {
+        "k3s-control": 209,
+        "k3s-worker-2": 209,
+        "k3s-worker-3": 208
+      },
+      "timestamp_min": 1774034666,
+      "timestamp_max": 1774035333,
+      "timestamp_span_s": 667,
+      "missing_columns": [],
+      "null_cells": 0,
+      "phase_count": 6
+    },
+    {
+      "run_id": "run_002",
+      "status": "pass",
+      "issues": [],
+      "kind": "stress",
+      "rows": 663,
+      "anomaly_rows": 111,
+      "anomaly_ratio": 0.1674,
+      "node_counts": {
+        "k3s-control": 221,
+        "k3s-worker-2": 221,
+        "k3s-worker-3": 221
+      },
+      "timestamp_min": 1774032068,
+      "timestamp_max": 1774032738,
+      "timestamp_span_s": 670,
+      "missing_columns": [],
+      "null_cells": 0,
+      "phase_count": 6
+    },
+    {
+      "run_id": "run_003",
+      "status": "pass",
+      "issues": [],
+      "kind": "stress",
+      "rows": 812,
+      "anomaly_rows": 157,
+      "anomaly_ratio": 0.1933,
+      "node_counts": {
+        "k3s-worker-2": 271,
+        "k3s-worker-3": 271,
+        "k3s-control": 270
+      },
+      "timestamp_min": 1774023498,
+      "timestamp_max": 1774024228,
+      "timestamp_span_s": 730,
+      "missing_columns": [],
+      "null_cells": 0,
+      "phase_count": 6
+    },
+    {
+      "run_id": "run_004",
+      "status": "pass",
+      "issues": [],
+      "kind": "stress",
+      "rows": 681,
+      "anomaly_rows": 128,
+      "anomaly_ratio": 0.188,
+      "node_counts": {
+        "k3s-control": 227,
+        "k3s-worker-2": 227,
+        "k3s-worker-3": 227
+      },
+      "timestamp_min": 1774030418,
+      "timestamp_max": 1774031088,
+      "timestamp_span_s": 670,
+      "missing_columns": [],
+      "null_cells": 0,
+      "phase_count": 6
+    },
+    {
+      "run_id": "run_005",
+      "status": "pass",
+      "issues": [],
+      "kind": "stress",
+      "rows": 840,
+      "anomaly_rows": 164,
+      "anomaly_ratio": 0.1952,
+      "node_counts": {
+        "k3s-control": 280,
+        "k3s-worker-2": 280,
+        "k3s-worker-3": 280
+      },
+      "timestamp_min": 1774037048,
+      "timestamp_max": 1774037868,
+      "timestamp_span_s": 820,
+      "missing_columns": [],
+      "null_cells": 0,
+      "phase_count": 6
+    },
+    {
+      "run_id": "run_006",
+      "status": "pass",
+      "issues": [],
+      "kind": "stress",
+      "rows": 690,
+      "anomaly_rows": 120,
+      "anomaly_ratio": 0.1739,
+      "node_counts": {
+        "k3s-control": 230,
+        "k3s-worker-2": 230,
+        "k3s-worker-3": 230
+      },
+      "timestamp_min": 1774035581,
+      "timestamp_max": 1774036251,
+      "timestamp_span_s": 670,
+      "missing_columns": [],
+      "null_cells": 0,
+      "phase_count": 6
+    },
+    {
+      "run_id": "run_007",
+      "status": "pass",
+      "issues": [],
+      "kind": "stress",
+      "rows": 720,
+      "anomaly_rows": 131,
+      "anomaly_ratio": 0.1819,
+      "node_counts": {
+        "k3s-control": 240,
+        "k3s-worker-2": 240,
+        "k3s-worker-3": 240
+      },
+      "timestamp_min": 1774027912,
+      "timestamp_max": 1774028612,
+      "timestamp_span_s": 700,
+      "missing_columns": [],
+      "null_cells": 0,
+      "phase_count": 6
+    },
+    {
+      "run_id": "run_008",
+      "status": "pass",
+      "issues": [],
+      "kind": "stress",
+      "rows": 741,
+      "anomaly_rows": 139,
+      "anomaly_ratio": 0.1876,
+      "node_counts": {
+        "k3s-control": 247,
+        "k3s-worker-2": 247,
+        "k3s-worker-3": 247
+      },
+      "timestamp_min": 1774032985,
+      "timestamp_max": 1774033714,
+      "timestamp_span_s": 729,
+      "missing_columns": [],
+      "null_cells": 0,
+      "phase_count": 6
+    },
+    {
+      "run_id": "run_009",
+      "status": "pass",
+      "issues": [],
+      "kind": "stress",
+      "rows": 587,
+      "anomaly_rows": 90,
+      "anomaly_ratio": 0.1533,
+      "node_counts": {
+        "k3s-worker-2": 196,
+        "k3s-worker-3": 196,
+        "k3s-control": 195
+      },
+      "timestamp_min": 1774028615,
+      "timestamp_max": 1774029434,
+      "timestamp_span_s": 819,
+      "missing_columns": [],
+      "null_cells": 0,
+      "phase_count": 6
+    },
+    {
+      "run_id": "run_010",
+      "status": "pass",
+      "issues": [],
+      "kind": "stress",
+      "rows": 744,
+      "anomaly_rows": 147,
+      "anomaly_ratio": 0.1976,
+      "node_counts": {
+        "k3s-control": 248,
+        "k3s-worker-2": 248,
+        "k3s-worker-3": 248
+      },
+      "timestamp_min": 1774033963,
+      "timestamp_max": 1774034658,
+      "timestamp_span_s": 695,
+      "missing_columns": [],
+      "null_cells": 0,
+      "phase_count": 6
+    },
+    {
+      "run_id": "run_011",
+      "status": "pass",
+      "issues": [],
+      "kind": "stress",
+      "rows": 750,
+      "anomaly_rows": 137,
+      "anomaly_ratio": 0.1827,
+      "node_counts": {
+        "k3s-control": 250,
+        "k3s-worker-2": 250,
+        "k3s-worker-3": 250
+      },
+      "timestamp_min": 1774029438,
+      "timestamp_max": 1774030170,
+      "timestamp_span_s": 732,
+      "missing_columns": [],
+      "null_cells": 0,
+      "phase_count": 6
+    },
+    {
+      "run_id": "run_012",
+      "status": "pass",
+      "issues": [],
+      "kind": "stress",
+      "rows": 796,
+      "anomaly_rows": 154,
+      "anomaly_ratio": 0.1935,
+      "node_counts": {
+        "k3s-worker-2": 266,
+        "k3s-control": 265,
+        "k3s-worker-3": 265
+      },
+      "timestamp_min": 1774036254,
+      "timestamp_max": 1774037043,
+      "timestamp_span_s": 789,
+      "missing_columns": [],
+      "null_cells": 0,
+      "phase_count": 6
+    },
+    {
+      "run_id": "run_013",
+      "status": "pass",
+      "issues": [],
+      "kind": "stress",
+      "rows": 792,
+      "anomaly_rows": 151,
+      "anomaly_ratio": 0.1907,
+      "node_counts": {
+        "k3s-worker-2": 265,
+        "k3s-worker-3": 264,
+        "k3s-control": 263
+      },
+      "timestamp_min": 1774027118,
+      "timestamp_max": 1774027908,
+      "timestamp_span_s": 790,
+      "missing_columns": [],
+      "null_cells": 0,
+      "phase_count": 6
+    },
+    {
+      "run_id": "run_014",
+      "status": "pass",
+      "issues": [],
+      "kind": "stress",
+      "rows": 747,
+      "anomaly_rows": 140,
+      "anomaly_ratio": 0.1874,
+      "node_counts": {
+        "k3s-control": 249,
+        "k3s-worker-2": 249,
+        "k3s-worker-3": 249
+      },
+      "timestamp_min": 1774031335,
+      "timestamp_max": 1774032064,
+      "timestamp_span_s": 729,
+      "missing_columns": [],
+      "null_cells": 0,
+      "phase_count": 6
+    },
+    {
+      "run_id": "run_015",
+      "status": "pass",
+      "issues": [],
+      "kind": "stress",
+      "rows": 831,
+      "anomaly_rows": 181,
+      "anomaly_ratio": 0.2178,
+      "node_counts": {
+        "k3s-control": 277,
+        "k3s-worker-2": 277,
+        "k3s-worker-3": 277
+      },
+      "timestamp_min": 1774024232,
+      "timestamp_max": 1774025082,
+      "timestamp_span_s": 850,
+      "missing_columns": [],
+      "null_cells": 0,
+      "phase_count": 6
+    },
+    {
+      "run_id": "run_016",
+      "status": "pass",
+      "issues": [],
+      "kind": "control",
+      "rows": 312,
+      "anomaly_rows": 0,
+      "anomaly_ratio": 0.0,
+      "node_counts": {
+        "k3s-control": 104,
+        "k3s-worker-2": 104,
+        "k3s-worker-3": 104
+      },
+      "timestamp_min": 1774032741,
+      "timestamp_max": 1774032980,
+      "timestamp_span_s": 239,
+      "missing_columns": [],
+      "null_cells": 0,
+      "phase_count": 2
+    },
+    {
+      "run_id": "run_017",
+      "status": "pass",
+      "issues": [],
+      "kind": "control",
+      "rows": 345,
+      "anomaly_rows": 0,
+      "anomaly_ratio": 0.0,
+      "node_counts": {
+        "k3s-control": 115,
+        "k3s-worker-2": 115,
+        "k3s-worker-3": 115
+      },
+      "timestamp_min": 1774035337,
+      "timestamp_max": 1774035577,
+      "timestamp_span_s": 240,
+      "missing_columns": [],
+      "null_cells": 0,
+      "phase_count": 2
+    },
+    {
+      "run_id": "run_018",
+      "status": "pass",
+      "issues": [],
+      "kind": "control",
+      "rows": 336,
+      "anomaly_rows": 0,
+      "anomaly_ratio": 0.0,
+      "node_counts": {
+        "k3s-control": 112,
+        "k3s-worker-2": 112,
+        "k3s-worker-3": 112
+      },
+      "timestamp_min": 1774033719,
+      "timestamp_max": 1774033959,
+      "timestamp_span_s": 240,
+      "missing_columns": [],
+      "null_cells": 0,
+      "phase_count": 2
+    },
+    {
+      "run_id": "run_019",
+      "status": "pass",
+      "issues": [],
+      "kind": "control",
+      "rows": 336,
+      "anomaly_rows": 0,
+      "anomaly_ratio": 0.0,
+      "node_counts": {
+        "k3s-control": 112,
+        "k3s-worker-2": 112,
+        "k3s-worker-3": 112
+      },
+      "timestamp_min": 1774030174,
+      "timestamp_max": 1774030414,
+      "timestamp_span_s": 240,
+      "missing_columns": [],
+      "null_cells": 0,
+      "phase_count": 2
+    },
+    {
+      "run_id": "run_020",
+      "status": "pass",
+      "issues": [],
+      "kind": "control",
+      "rows": 327,
+      "anomaly_rows": 0,
+      "anomaly_ratio": 0.0,
+      "node_counts": {
+        "k3s-control": 109,
+        "k3s-worker-2": 109,
+        "k3s-worker-3": 109
+      },
+      "timestamp_min": 1774031091,
+      "timestamp_max": 1774031330,
+      "timestamp_span_s": 239,
+      "missing_columns": [],
+      "null_cells": 0,
+      "phase_count": 2
+    }
+  ]
+}
