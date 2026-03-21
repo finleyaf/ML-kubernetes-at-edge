@@ -1,0 +1,20 @@
+{
+  "selected_at": "2026-03-20T20:37:51.919640+00:00",
+  "strategy": "loo",
+  "n_splits": null,
+  "config": {
+    "method": "nsa",
+    "window": 5,
+    "num_detectors": 300,
+    "radius": 0.1,
+    "kmeans_threshold_rule": null
+  },
+  "performance": {
+    "f1_mean": 0.3821,
+    "f1_ci_low": 0.2768,
+    "f1_ci_high": 0.4874,
+    "precision_mean": 0.6752,
+    "recall_mean": 0.2698,
+    "runs_evaluated": 20
+  }
+}
