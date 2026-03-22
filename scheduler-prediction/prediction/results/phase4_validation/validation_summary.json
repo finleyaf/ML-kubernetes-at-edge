@@ -1,0 +1,28 @@
+{
+  "runs_total": 20,
+  "development_runs": 16,
+  "strict_holdout_runs": 4,
+  "holdout_strategy": "stratified_stress_control",
+  "windows": [
+    5,
+    10
+  ],
+  "horizons": [
+    3,
+    5
+  ],
+  "rolling_origin_splits": 8,
+  "best_linear_config": {
+    "window": 5,
+    "horizon": 3
+  },
+  "outputs": {
+    "cv_per_fold": "scheduler-prediction/prediction/results/phase4_validation/cv_per_fold_metrics.csv",
+    "cv_per_fold_phase": "scheduler-prediction/prediction/results/phase4_validation/cv_per_fold_phase_metrics.csv",
+    "cv_summary": "scheduler-prediction/prediction/results/phase4_validation/cv_config_summary.csv",
+    "holdout_overall": "scheduler-prediction/prediction/results/phase4_validation/holdout_overall_metrics.csv",
+    "holdout_phase": "scheduler-prediction/prediction/results/phase4_validation/holdout_phase_metrics.csv",
+    "locked_config": "scheduler-prediction/prediction/results/phase4_validation/locked_predictor_config.json",
+    "validation_summary": "scheduler-prediction/prediction/results/phase4_validation/validation_summary.json"
+  }
+}

@@ -35,21 +35,36 @@ def train_node_model(node_df, window, horizon):
     """Train a linear regression model for a single node."""
     values = node_df[FEATURES].values
 
-    # fit scaler on this node's data
+    if len(values) < (window + horizon + 10):
+        print(f"  Warning: only {len(values)} raw rows, skipping")
+        return None, None, None
+
+    # time split on raw sequence first; scaler must only see training period
+    train_end_row = int(len(values) * 0.8)
+    train_end_row = max(train_end_row, window + horizon)
+    train_end_row = min(train_end_row, len(values) - 1)
+
+    # fit scaler on TRAIN rows only to prevent leakage from test period
     scaler = MinMaxScaler()
-    scaled = scaler.fit_transform(values)
+    scaler.fit(values[:train_end_row])
+    scaled = scaler.transform(values)
 
     # create sequences
     X, y = create_sequences(scaled, window, horizon)
+    target_row_idx = np.array([i + window + horizon - 1 for i in range(len(X))])
 
     if len(X) < 10:
         print(f"  Warning: only {len(X)} samples, skipping")
         return None, None, None
 
-    # train/test split (80/20, no shuffle for time series)
-    split = int(len(X) * 0.8)
-    X_train, X_test = X[:split], X[split:]
-    y_train, y_test = y[:split], y[split:]
+    # split by whether target timestamp is in training period
+    train_mask = target_row_idx < train_end_row
+    X_train, y_train = X[train_mask], y[train_mask]
+    X_test, y_test = X[~train_mask], y[~train_mask]
+
+    if len(X_train) < 10 or len(X_test) < 1:
+        print(f"  Warning: insufficient split after leakage-safe partition (train={len(X_train)}, test={len(X_test)}), skipping")
+        return None, None, None
 
     # train model
     model = LinearRegression()

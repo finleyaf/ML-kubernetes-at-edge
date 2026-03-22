@@ -22,6 +22,8 @@ class NodeScore:
     total_score: float
     predicted_load: float
     anomaly_risk: float
+    weight_prediction: float
+    weight_anomaly: float
 
 
 class NodeAnomalyMonitor:
@@ -72,12 +74,27 @@ class HybridScheduler:
         anomaly_z_threshold: float = 2.5,
         weight_prediction: float = 0.6,
         weight_anomaly: float = 0.4,
+        adaptive_weighting: bool = False,
+        adaptive_risk_low: float = 0.2,
+        adaptive_risk_high: float = 0.7,
+        adaptive_max_shift: float = 0.35,
+        adaptive_min_prediction_weight: float = 0.05,
+        adaptive_max_prediction_weight: float = 0.95,
     ):
         if abs((weight_prediction + weight_anomaly) - 1.0) > 1e-6:
             raise ValueError("weight_prediction + weight_anomaly must equal 1.0")
 
         self.weight_prediction = weight_prediction
         self.weight_anomaly = weight_anomaly
+        self.adaptive_weighting = adaptive_weighting
+        self.adaptive_risk_low = adaptive_risk_low
+        self.adaptive_risk_high = adaptive_risk_high
+        self.adaptive_max_shift = adaptive_max_shift
+        self.adaptive_min_prediction_weight = adaptive_min_prediction_weight
+        self.adaptive_max_prediction_weight = adaptive_max_prediction_weight
+
+        if self.adaptive_risk_low >= self.adaptive_risk_high:
+            raise ValueError("adaptive_risk_low must be < adaptive_risk_high")
 
         self.predictor = ClusterPredictor(model_dir=model_dir, window_size=window_size)
         self.monitors: Dict[str, NodeAnomalyMonitor] = {}
@@ -88,6 +105,23 @@ class HybridScheduler:
                 history_size=anomaly_history,
                 z_threshold=anomaly_z_threshold,
             )
+
+    def _effective_prediction_weight(self, anomaly_risk: float) -> float:
+        if not self.adaptive_weighting:
+            return self.weight_prediction
+
+        risk = max(0.0, min(1.0, float(anomaly_risk)))
+        if risk <= self.adaptive_risk_low:
+            shift = self.adaptive_max_shift
+        elif risk >= self.adaptive_risk_high:
+            shift = -self.adaptive_max_shift
+        else:
+            ratio = (risk - self.adaptive_risk_low) / (self.adaptive_risk_high - self.adaptive_risk_low)
+            shift = self.adaptive_max_shift * (1.0 - 2.0 * ratio)
+
+        pred_w = self.weight_prediction + shift
+        pred_w = max(self.adaptive_min_prediction_weight, min(self.adaptive_max_prediction_weight, pred_w))
+        return float(pred_w)
 
     def update(self, node: str, observation: Dict[str, float]) -> None:
         self.predictor.update(node, observation)
@@ -121,7 +155,9 @@ class HybridScheduler:
                 pred_load = self._fallback_load(obs)
 
             anomaly_risk = self.monitors[node].risk(obs)
-            total = self.weight_prediction * pred_load + self.weight_anomaly * anomaly_risk
+            eff_pred_w = self._effective_prediction_weight(anomaly_risk)
+            eff_anom_w = 1.0 - eff_pred_w
+            total = eff_pred_w * pred_load + eff_anom_w * anomaly_risk
 
             scored.append(
                 NodeScore(
@@ -129,6 +165,8 @@ class HybridScheduler:
                     total_score=round(float(total), 4),
                     predicted_load=round(float(pred_load), 4),
                     anomaly_risk=round(float(anomaly_risk), 4),
+                    weight_prediction=round(float(eff_pred_w), 4),
+                    weight_anomaly=round(float(eff_anom_w), 4),
                 )
             )
 
