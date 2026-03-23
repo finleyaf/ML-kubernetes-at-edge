@@ -14,9 +14,20 @@ class NodePredictor:
 
     def __init__(self, model_path, scaler_path, window_size=10):
         with open(model_path, "rb") as f:
-            self.model = pickle.load(f)
+            loaded = pickle.load(f)
         with open(scaler_path, "rb") as f:
             self.scaler = pickle.load(f)
+
+        # Backward compatibility: support old raw sklearn model pickles.
+        if isinstance(loaded, dict) and "model" in loaded:
+            self.model = loaded["model"]
+            cal = loaded.get("calibration", {})
+            self.calibration_alpha = np.array(cal.get("alpha", [1.0] * len(FEATURES)), dtype=float)
+            self.calibration_beta = np.array(cal.get("beta", [0.0] * len(FEATURES)), dtype=float)
+        else:
+            self.model = loaded
+            self.calibration_alpha = np.ones(len(FEATURES), dtype=float)
+            self.calibration_beta = np.zeros(len(FEATURES), dtype=float)
 
         self.window_size = window_size
         self.buffer = []
@@ -55,6 +66,9 @@ class NodePredictor:
 
         # predict
         pred = self.model.predict(X)[0]
+
+        # Simple affine calibration fitted on train-only calibration tail.
+        pred = (pred * self.calibration_alpha) + self.calibration_beta
 
         # clip to [0, 1] range
         pred = np.clip(pred, 0, 1)

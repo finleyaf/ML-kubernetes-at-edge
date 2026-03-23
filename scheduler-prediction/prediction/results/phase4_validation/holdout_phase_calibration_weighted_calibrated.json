@@ -1,0 +1,818 @@
+{
+  "window": 5,
+  "horizon": 3,
+  "features": [
+    "cpu_user",
+    "cpu_system",
+    "ram_used",
+    "net_received",
+    "net_sent"
+  ],
+  "phase_column": "phase_name",
+  "nodes": {
+    "k3s-worker-2": {
+      "num_predictions": 739,
+      "phases": {
+        "baseline": {
+          "count": 214,
+          "features": {
+            "cpu_user": {
+              "mae": 0.02588,
+              "rmse": 0.030548,
+              "bias": 0.017819,
+              "calibration_slope": -0.113408,
+              "calibration_intercept": 0.051968,
+              "calibration_r2": 0.018913,
+              "ece": 0.017819
+            },
+            "cpu_system": {
+              "mae": 0.016522,
+              "rmse": 0.024182,
+              "bias": 0.006692,
+              "calibration_slope": -0.011241,
+              "calibration_intercept": 0.030265,
+              "calibration_r2": 9.3e-05,
+              "ece": 0.006692
+            },
+            "ram_used": {
+              "mae": 0.026491,
+              "rmse": 0.07333,
+              "bias": -0.001827,
+              "calibration_slope": 0.95135,
+              "calibration_intercept": 0.039692,
+              "calibration_r2": 0.740276,
+              "ece": 0.009083
+            },
+            "net_received": {
+              "mae": 0.044926,
+              "rmse": 0.057509,
+              "bias": -0.013314,
+              "calibration_slope": 0.649117,
+              "calibration_intercept": 0.249029,
+              "calibration_r2": 0.026558,
+              "ece": 0.013517
+            },
+            "net_sent": {
+              "mae": 0.028615,
+              "rmse": 0.090529,
+              "bias": -0.009352,
+              "calibration_slope": 0.72583,
+              "calibration_intercept": 0.041799,
+              "calibration_r2": 0.006402,
+              "ece": 0.009352
+            }
+          }
+        },
+        "cpu": {
+          "count": 48,
+          "features": {
+            "cpu_user": {
+              "mae": 0.243442,
+              "rmse": 0.381894,
+              "bias": -0.240654,
+              "calibration_slope": 0.305318,
+              "calibration_intercept": 0.651525,
+              "calibration_r2": 0.16634,
+              "ece": 0.240654
+            },
+            "cpu_system": {
+              "mae": 0.046225,
+              "rmse": 0.059076,
+              "bias": -0.023056,
+              "calibration_slope": 0.681734,
+              "calibration_intercept": 0.050587,
+              "calibration_r2": 0.241395,
+              "ece": 0.023056
+            },
+            "ram_used": {
+              "mae": 0.019877,
+              "rmse": 0.029421,
+              "bias": 0.000203,
+              "calibration_slope": 0.051849,
+              "calibration_intercept": 0.792138,
+              "calibration_r2": 0.024859,
+              "ece": 0.017258
+            },
+            "net_received": {
+              "mae": 0.070908,
+              "rmse": 0.098003,
+              "bias": 0.04001,
+              "calibration_slope": 1.081843,
+              "calibration_intercept": -0.082594,
+              "calibration_r2": 0.499964,
+              "ece": 0.050825
+            },
+            "net_sent": {
+              "mae": 0.030201,
+              "rmse": 0.0374,
+              "bias": 0.016763,
+              "calibration_slope": 1.282056,
+              "calibration_intercept": -0.035805,
+              "calibration_r2": 0.553598,
+              "ece": 0.020921
+            }
+          }
+        },
+        "io": {
+          "count": 65,
+          "features": {
+            "cpu_user": {
+              "mae": 0.105723,
+              "rmse": 0.136586,
+              "bias": -0.051082,
+              "calibration_slope": 0.370575,
+              "calibration_intercept": 0.207992,
+              "calibration_r2": 0.116384,
+              "ece": 0.07534
+            },
+            "cpu_system": {
+              "mae": 0.216671,
+              "rmse": 0.280297,
+              "bias": -0.196871,
+              "calibration_slope": 0.16966,
+              "calibration_intercept": 0.469482,
+              "calibration_r2": 0.021233,
+              "ece": 0.196871
+            },
+            "ram_used": {
+              "mae": 0.012541,
+              "rmse": 0.01545,
+              "bias": -0.000352,
+              "calibration_slope": 0.665636,
+              "calibration_intercept": 0.27686,
+              "calibration_r2": 0.416857,
+              "ece": 0.002758
+            },
+            "net_received": {
+              "mae": 0.083245,
+              "rmse": 0.117156,
+              "bias": 0.049948,
+              "calibration_slope": 0.46912,
+              "calibration_intercept": 0.209938,
+              "calibration_r2": 0.164476,
+              "ece": 0.05329
+            },
+            "net_sent": {
+              "mae": 0.055616,
+              "rmse": 0.109449,
+              "bias": 0.001517,
+              "calibration_slope": 0.2518,
+              "calibration_intercept": 0.043245,
+              "calibration_r2": 0.00645,
+              "ece": 0.017762
+            }
+          }
+        },
+        "memory": {
+          "count": 74,
+          "features": {
+            "cpu_user": {
+              "mae": 0.100347,
+              "rmse": 0.203302,
+              "bias": 0.040907,
+              "calibration_slope": 0.182206,
+              "calibration_intercept": 0.050362,
+              "calibration_r2": 0.061043,
+              "ece": 0.073247
+            },
+            "cpu_system": {
+              "mae": 0.035131,
+              "rmse": 0.048349,
+              "bias": 0.020061,
+              "calibration_slope": 0.161188,
+              "calibration_intercept": 0.021825,
+              "calibration_r2": 0.01786,
+              "ece": 0.020061
+            },
+            "ram_used": {
+              "mae": 0.07877,
+              "rmse": 0.167964,
+              "bias": 0.026593,
+              "calibration_slope": 0.486729,
+              "calibration_intercept": 0.36997,
+              "calibration_r2": 0.144928,
+              "ece": 0.069049
+            },
+            "net_received": {
+              "mae": 0.072399,
+              "rmse": 0.093322,
+              "bias": 0.038258,
+              "calibration_slope": -0.197175,
+              "calibration_intercept": 0.692887,
+              "calibration_r2": 0.033769,
+              "ece": 0.0648
+            },
+            "net_sent": {
+              "mae": 0.030997,
+              "rmse": 0.041329,
+              "bias": 0.015699,
+              "calibration_slope": 0.12765,
+              "calibration_intercept": 0.073339,
+              "calibration_r2": 0.006842,
+              "ece": 0.017724
+            }
+          }
+        },
+        "mixed": {
+          "count": 130,
+          "features": {
+            "cpu_user": {
+              "mae": 0.047768,
+              "rmse": 0.128268,
+              "bias": 0.03073,
+              "calibration_slope": 0.146615,
+              "calibration_intercept": 0.037086,
+              "calibration_r2": 0.162133,
+              "ece": 0.03073
+            },
+            "cpu_system": {
+              "mae": 0.023232,
+              "rmse": 0.057193,
+              "bias": 0.006087,
+              "calibration_slope": 0.219022,
+              "calibration_intercept": 0.027136,
+              "calibration_r2": 0.013128,
+              "ece": 0.007874
+            },
+            "ram_used": {
+              "mae": 0.034259,
+              "rmse": 0.091789,
+              "bias": -0.0023,
+              "calibration_slope": 0.967297,
+              "calibration_intercept": 0.025201,
+              "calibration_r2": 0.769652,
+              "ece": 0.015399
+            },
+            "net_received": {
+              "mae": 0.061567,
+              "rmse": 0.082672,
+              "bias": -0.020115,
+              "calibration_slope": 0.082694,
+              "calibration_intercept": 0.629625,
+              "calibration_r2": 0.002886,
+              "ece": 0.022977
+            },
+            "net_sent": {
+              "mae": 0.039408,
+              "rmse": 0.112233,
+              "bias": -0.005741,
+              "calibration_slope": 0.257078,
+              "calibration_intercept": 0.092291,
+              "calibration_r2": 0.001494,
+              "ece": 0.005741
+            }
+          }
+        },
+        "recovery": {
+          "count": 205,
+          "features": {
+            "cpu_user": {
+              "mae": 0.051132,
+              "rmse": 0.094755,
+              "bias": 0.025888,
+              "calibration_slope": 0.421816,
+              "calibration_intercept": 0.0266,
+              "calibration_r2": 0.130446,
+              "ece": 0.026732
+            },
+            "cpu_system": {
+              "mae": 0.036625,
+              "rmse": 0.088482,
+              "bias": 0.016333,
+              "calibration_slope": 0.276717,
+              "calibration_intercept": 0.027008,
+              "calibration_r2": 0.107825,
+              "ece": 0.01719
+            },
+            "ram_used": {
+              "mae": 0.029613,
+              "rmse": 0.095264,
+              "bias": -0.003122,
+              "calibration_slope": 0.441137,
+              "calibration_intercept": 0.46639,
+              "calibration_r2": 0.138055,
+              "ece": 0.017224
+            },
+            "net_received": {
+              "mae": 0.060089,
+              "rmse": 0.079915,
+              "bias": -0.016702,
+              "calibration_slope": 0.48902,
+              "calibration_intercept": 0.349561,
+              "calibration_r2": 0.128565,
+              "ece": 0.01868
+            },
+            "net_sent": {
+              "mae": 0.033187,
+              "rmse": 0.10144,
+              "bias": -0.009569,
+              "calibration_slope": 0.717991,
+              "calibration_intercept": 0.041797,
+              "calibration_r2": 0.021049,
+              "ece": 0.009569
+            }
+          }
+        },
+        "unknown": {
+          "count": 3,
+          "features": {
+            "cpu_user": {
+              "mae": 0.021977,
+              "rmse": 0.030169,
+              "bias": 0.021977,
+              "calibration_slope": 1.0,
+              "calibration_intercept": 0.0,
+              "calibration_r2": 0.0,
+              "ece": 0.021977
+            },
+            "cpu_system": {
+              "mae": 0.043737,
+              "rmse": 0.05087,
+              "bias": 0.043737,
+              "calibration_slope": 1.0,
+              "calibration_intercept": 0.0,
+              "calibration_r2": 0.0,
+              "ece": 0.043737
+            },
+            "ram_used": {
+              "mae": 0.161987,
+              "rmse": 0.228386,
+              "bias": 0.097351,
+              "calibration_slope": 1.0,
+              "calibration_intercept": 0.0,
+              "calibration_r2": 0.0,
+              "ece": 0.161987
+            },
+            "net_received": {
+              "mae": 0.102626,
+              "rmse": 0.103643,
+              "bias": 0.102626,
+              "calibration_slope": 1.0,
+              "calibration_intercept": 0.0,
+              "calibration_r2": 0.0,
+              "ece": 0.102626
+            },
+            "net_sent": {
+              "mae": 0.034037,
+              "rmse": 0.034805,
+              "bias": 0.034037,
+              "calibration_slope": 1.0,
+              "calibration_intercept": 0.0,
+              "calibration_r2": 0.0,
+              "ece": 0.034037
+            }
+          }
+        }
+      },
+      "overall": {
+        "cpu_user": {
+          "mae": 0.06533,
+          "rmse": 0.144608,
+          "bias": 0.001809,
+          "calibration_slope": 0.920967,
+          "calibration_intercept": 0.008392,
+          "calibration_r2": 0.571419,
+          "ece": 0.012187
+        },
+        "cpu_system": {
+          "mae": 0.044787,
+          "rmse": 0.101481,
+          "bias": -0.009088,
+          "calibration_slope": 1.153927,
+          "calibration_intercept": -0.002369,
+          "calibration_r2": 0.580508,
+          "ece": 0.010376
+        },
+        "ram_used": {
+          "mae": 0.032852,
+          "rmse": 0.093117,
+          "bias": 0.001241,
+          "calibration_slope": 0.856765,
+          "calibration_intercept": 0.111381,
+          "calibration_r2": 0.579698,
+          "ece": 0.01345
+        },
+        "net_received": {
+          "mae": 0.060103,
+          "rmse": 0.081722,
+          "bias": -0.000788,
+          "calibration_slope": 0.97709,
+          "calibration_intercept": 0.015285,
+          "calibration_r2": 0.467399,
+          "ece": 0.00914
+        },
+        "net_sent": {
+          "mae": 0.03452,
+          "rmse": 0.093616,
+          "bias": -0.00344,
+          "calibration_slope": 0.915315,
+          "calibration_intercept": 0.012486,
+          "calibration_r2": 0.068197,
+          "ece": 0.00344
+        }
+      }
+    },
+    "k3s-worker-3": {
+      "num_predictions": 739,
+      "phases": {
+        "baseline": {
+          "count": 214,
+          "features": {
+            "cpu_user": {
+              "mae": 0.016724,
+              "rmse": 0.021276,
+              "bias": 0.009986,
+              "calibration_slope": -0.079053,
+              "calibration_intercept": 0.023436,
+              "calibration_r2": 0.005871,
+              "ece": 0.009986
+            },
+            "cpu_system": {
+              "mae": 0.012901,
+              "rmse": 0.02152,
+              "bias": 0.004648,
+              "calibration_slope": -0.052129,
+              "calibration_intercept": 0.02621,
+              "calibration_r2": 0.001063,
+              "ece": 0.004648
+            },
+            "ram_used": {
+              "mae": 0.01621,
+              "rmse": 0.021426,
+              "bias": 0.01269,
+              "calibration_slope": 0.624174,
+              "calibration_intercept": 0.24358,
+              "calibration_r2": 0.300704,
+              "ece": 0.01269
+            },
+            "net_received": {
+              "mae": 0.039532,
+              "rmse": 0.050854,
+              "bias": -0.013753,
+              "calibration_slope": 0.334994,
+              "calibration_intercept": 0.151201,
+              "calibration_r2": 0.018893,
+              "ece": 0.013753
+            },
+            "net_sent": {
+              "mae": 0.047966,
+              "rmse": 0.131588,
+              "bias": -0.000569,
+              "calibration_slope": 0.274992,
+              "calibration_intercept": 0.13185,
+              "calibration_r2": 0.000917,
+              "ece": 0.002787
+            }
+          }
+        },
+        "cpu": {
+          "count": 48,
+          "features": {
+            "cpu_user": {
+              "mae": 0.019388,
+              "rmse": 0.024014,
+              "bias": 0.015454,
+              "calibration_slope": -0.002672,
+              "calibration_intercept": 0.023204,
+              "calibration_r2": 6e-06,
+              "ece": 0.015454
+            },
+            "cpu_system": {
+              "mae": 0.017801,
+              "rmse": 0.022322,
+              "bias": 0.011975,
+              "calibration_slope": -0.125257,
+              "calibration_intercept": 0.032981,
+              "calibration_r2": 0.008893,
+              "ece": 0.011975
+            },
+            "ram_used": {
+              "mae": 0.017509,
+              "rmse": 0.020544,
+              "bias": 0.016211,
+              "calibration_slope": 0.893518,
+              "calibration_intercept": 0.054726,
+              "calibration_r2": 0.598022,
+              "ece": 0.016211
+            },
+            "net_received": {
+              "mae": 0.067908,
+              "rmse": 0.074277,
+              "bias": 0.060819,
+              "calibration_slope": 0.842517,
+              "calibration_intercept": -0.039005,
+              "calibration_r2": 0.376541,
+              "ece": 0.060819
+            },
+            "net_sent": {
+              "mae": 0.072823,
+              "rmse": 0.174299,
+              "bias": -0.012575,
+              "calibration_slope": 2.885939,
+              "calibration_intercept": -0.278187,
+              "calibration_r2": 0.09692,
+              "ece": 0.012575
+            }
+          }
+        },
+        "io": {
+          "count": 65,
+          "features": {
+            "cpu_user": {
+              "mae": 0.105299,
+              "rmse": 0.235328,
+              "bias": 0.097248,
+              "calibration_slope": 0.130182,
+              "calibration_intercept": 0.016639,
+              "calibration_r2": 0.108134,
+              "ece": 0.101839
+            },
+            "cpu_system": {
+              "mae": 0.097817,
+              "rmse": 0.210045,
+              "bias": 0.094212,
+              "calibration_slope": 0.236393,
+              "calibration_intercept": 0.008757,
+              "calibration_r2": 0.300611,
+              "ece": 0.094212
+            },
+            "ram_used": {
+              "mae": 0.11729,
+              "rmse": 0.175119,
+              "bias": -0.10585,
+              "calibration_slope": 0.484367,
+              "calibration_intercept": 0.488829,
+              "calibration_r2": 0.320783,
+              "ece": 0.10585
+            },
+            "net_received": {
+              "mae": 0.059428,
+              "rmse": 0.068466,
+              "bias": 0.058279,
+              "calibration_slope": 0.137982,
+              "calibration_intercept": 0.041374,
+              "calibration_r2": 0.033429,
+              "ece": 0.058279
+            },
+            "net_sent": {
+              "mae": 0.035046,
+              "rmse": 0.043364,
+              "bias": 0.034216,
+              "calibration_slope": 0.130232,
+              "calibration_intercept": 0.095866,
+              "calibration_r2": 0.027706,
+              "ece": 0.035046
+            }
+          }
+        },
+        "memory": {
+          "count": 74,
+          "features": {
+            "cpu_user": {
+              "mae": 0.030884,
+              "rmse": 0.07937,
+              "bias": 0.011092,
+              "calibration_slope": -0.018089,
+              "calibration_intercept": 0.030378,
+              "calibration_r2": 0.000177,
+              "ece": 0.011092
+            },
+            "cpu_system": {
+              "mae": 0.020501,
+              "rmse": 0.036484,
+              "bias": 0.008753,
+              "calibration_slope": -0.112253,
+              "calibration_intercept": 0.028897,
+              "calibration_r2": 0.022743,
+              "ece": 0.008753
+            },
+            "ram_used": {
+              "mae": 0.026274,
+              "rmse": 0.035902,
+              "bias": 0.022675,
+              "calibration_slope": 0.53219,
+              "calibration_intercept": 0.290262,
+              "calibration_r2": 0.157154,
+              "ece": 0.02448
+            },
+            "net_received": {
+              "mae": 0.036784,
+              "rmse": 0.052213,
+              "bias": -0.010438,
+              "calibration_slope": 0.142425,
+              "calibration_intercept": 0.171838,
+              "calibration_r2": 0.008798,
+              "ece": 0.01377
+            },
+            "net_sent": {
+              "mae": 0.044179,
+              "rmse": 0.11466,
+              "bias": 0.005055,
+              "calibration_slope": 0.850936,
+              "calibration_intercept": 0.021222,
+              "calibration_r2": 0.01311,
+              "ece": 0.005055
+            }
+          }
+        },
+        "mixed": {
+          "count": 130,
+          "features": {
+            "cpu_user": {
+              "mae": 0.112322,
+              "rmse": 0.187655,
+              "bias": -0.088875,
+              "calibration_slope": 0.371624,
+              "calibration_intercept": 0.51572,
+              "calibration_r2": 0.278602,
+              "ece": 0.090907
+            },
+            "cpu_system": {
+              "mae": 0.120312,
+              "rmse": 0.190165,
+              "bias": -0.070764,
+              "calibration_slope": 0.412901,
+              "calibration_intercept": 0.367832,
+              "calibration_r2": 0.175239,
+              "ece": 0.070764
+            },
+            "ram_used": {
+              "mae": 0.173519,
+              "rmse": 0.233364,
+              "bias": 0.076672,
+              "calibration_slope": 0.21413,
+              "calibration_intercept": 0.346421,
+              "calibration_r2": 0.006049,
+              "ece": 0.088359
+            },
+            "net_received": {
+              "mae": 0.056716,
+              "rmse": 0.091517,
+              "bias": -0.004944,
+              "calibration_slope": 0.10021,
+              "calibration_intercept": 0.165726,
+              "calibration_r2": 0.001599,
+              "ece": 0.018606
+            },
+            "net_sent": {
+              "mae": 0.062833,
+              "rmse": 0.120832,
+              "bias": -0.010975,
+              "calibration_slope": 0.702458,
+              "calibration_intercept": 0.062871,
+              "calibration_r2": 0.021309,
+              "ece": 0.01679
+            }
+          }
+        },
+        "recovery": {
+          "count": 205,
+          "features": {
+            "cpu_user": {
+              "mae": 0.02078,
+              "rmse": 0.041015,
+              "bias": 0.008621,
+              "calibration_slope": -0.091349,
+              "calibration_intercept": 0.026761,
+              "calibration_r2": 0.00734,
+              "ece": 0.008621
+            },
+            "cpu_system": {
+              "mae": 0.016456,
+              "rmse": 0.032797,
+              "bias": 0.006171,
+              "calibration_slope": -0.020273,
+              "calibration_intercept": 0.025802,
+              "calibration_r2": 0.000349,
+              "ece": 0.006171
+            },
+            "ram_used": {
+              "mae": 0.029848,
+              "rmse": 0.052139,
+              "bias": -0.005623,
+              "calibration_slope": 1.292226,
+              "calibration_intercept": -0.208153,
+              "calibration_r2": 0.749723,
+              "ece": 0.011763
+            },
+            "net_received": {
+              "mae": 0.043262,
+              "rmse": 0.058472,
+              "bias": -0.018251,
+              "calibration_slope": 0.698421,
+              "calibration_intercept": 0.079603,
+              "calibration_r2": 0.189211,
+              "ece": 0.018251
+            },
+            "net_sent": {
+              "mae": 0.044777,
+              "rmse": 0.127151,
+              "bias": -0.000889,
+              "calibration_slope": 0.914611,
+              "calibration_intercept": 0.016162,
+              "calibration_r2": 0.014112,
+              "ece": 0.004266
+            }
+          }
+        },
+        "unknown": {
+          "count": 3,
+          "features": {
+            "cpu_user": {
+              "mae": 0.025863,
+              "rmse": 0.026026,
+              "bias": 0.00662,
+              "calibration_slope": 1.0,
+              "calibration_intercept": 0.0,
+              "calibration_r2": 0.0,
+              "ece": 0.00662
+            },
+            "cpu_system": {
+              "mae": 0.010376,
+              "rmse": 0.015547,
+              "bias": -0.008445,
+              "calibration_slope": 1.0,
+              "calibration_intercept": 0.0,
+              "calibration_r2": 0.0,
+              "ece": 0.008445
+            },
+            "ram_used": {
+              "mae": 0.024711,
+              "rmse": 0.029644,
+              "bias": -0.013096,
+              "calibration_slope": 1.0,
+              "calibration_intercept": 0.0,
+              "calibration_r2": 0.0,
+              "ece": 0.024711
+            },
+            "net_received": {
+              "mae": 0.025688,
+              "rmse": 0.028024,
+              "bias": -0.018887,
+              "calibration_slope": 1.0,
+              "calibration_intercept": 0.0,
+              "calibration_r2": 0.0,
+              "ece": 0.018887
+            },
+            "net_sent": {
+              "mae": 0.024481,
+              "rmse": 0.025831,
+              "bias": 0.024481,
+              "calibration_slope": 1.0,
+              "calibration_intercept": 0.0,
+              "calibration_r2": 0.0,
+              "ece": 0.024481
+            }
+          }
+        }
+      },
+      "overall": {
+        "cpu_user": {
+          "mae": 0.044085,
+          "rmse": 0.111061,
+          "bias": 0.000344,
+          "calibration_slope": 1.012453,
+          "calibration_intercept": -0.002283,
+          "calibration_r2": 0.854547,
+          "ece": 0.005918
+        },
+        "cpu_system": {
+          "mae": 0.04132,
+          "rmse": 0.104121,
+          "bias": 0.000516,
+          "calibration_slope": 0.968817,
+          "calibration_intercept": 0.003356,
+          "calibration_r2": 0.78222,
+          "ece": 0.006736
+        },
+        "ram_used": {
+          "mae": 0.057683,
+          "rmse": 0.115432,
+          "bias": 0.009563,
+          "calibration_slope": 1.091743,
+          "calibration_intercept": -0.071345,
+          "calibration_r2": 0.454557,
+          "ece": 0.027734
+        },
+        "net_received": {
+          "mae": 0.046851,
+          "rmse": 0.064942,
+          "bias": -0.001961,
+          "calibration_slope": 1.094207,
+          "calibration_intercept": -0.015606,
+          "calibration_r2": 0.33772,
+          "ece": 0.005404
+        },
+        "net_sent": {
+          "mae": 0.0497,
+          "rmse": 0.124601,
+          "bias": 0.000456,
+          "calibration_slope": 0.94748,
+          "calibration_intercept": 0.008697,
+          "calibration_r2": 0.025045,
+          "ece": 0.000673
+        }
+      }
+    }
+  }
+}

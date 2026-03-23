@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.preprocessing import MinMaxScaler
 import pickle
 import argparse
@@ -13,6 +13,10 @@ parser.add_argument("--input", required=True, help="Path to raw dataset CSV (fro
 parser.add_argument("--window", type=int, default=10, help="Sliding window size (number of past timesteps)")
 parser.add_argument("--horizon", type=int, default=5, help="Prediction horizon (steps ahead)")
 parser.add_argument("--output-dir", required=True, help="Directory to save trained model and scaler")
+parser.add_argument("--model", choices=["linear", "ridge"], default="ridge", help="Regression model type")
+parser.add_argument("--ridge-alpha", type=float, default=1.0, help="L2 regularization strength for Ridge")
+parser.add_argument("--stress-weight", type=float, default=2.0, help="Sample weight multiplier for cpu phase targets")
+parser.add_argument("--mixed-weight", type=float, default=1.5, help="Sample weight multiplier for mixed phase targets")
 args = parser.parse_args()
 
 FEATURES = ["cpu_user", "cpu_system", "ram_used", "net_received", "net_sent"]
@@ -29,6 +33,30 @@ def create_sequences(data, window, horizon):
         X.append(data[i:i + window].flatten())
         y.append(data[i + window + horizon - 1])
     return np.array(X), np.array(y)
+
+
+def fit_linear_calibrator(y_true: np.ndarray, y_pred: np.ndarray):
+    """Fit y_true ~= a*y_pred + b per feature for simple calibration."""
+    n_features = y_true.shape[1]
+    alpha = np.ones(n_features, dtype=float)
+    beta = np.zeros(n_features, dtype=float)
+
+    for j in range(n_features):
+        x = y_pred[:, j]
+        y = y_true[:, j]
+        if len(x) < 5 or np.std(x) < 1e-8:
+            continue
+        a, b = np.polyfit(x, y, 1)
+        alpha[j] = float(a)
+        beta[j] = float(b)
+
+    return {"alpha": alpha.tolist(), "beta": beta.tolist()}
+
+
+def apply_calibration(y_pred: np.ndarray, calibration: dict) -> np.ndarray:
+    alpha = np.array(calibration.get("alpha", [1.0] * y_pred.shape[1]), dtype=float)
+    beta = np.array(calibration.get("beta", [0.0] * y_pred.shape[1]), dtype=float)
+    return (y_pred * alpha) + beta
 
 
 def train_node_model(node_df, window, horizon):
@@ -53,6 +81,16 @@ def train_node_model(node_df, window, horizon):
     X, y = create_sequences(scaled, window, horizon)
     target_row_idx = np.array([i + window + horizon - 1 for i in range(len(X))])
 
+    phase_col = None
+    for c in ["phase_name", "phase", "phase_type"]:
+        if c in node_df.columns:
+            phase_col = c
+            break
+
+    target_phase = np.array(["unknown"] * len(X), dtype=object)
+    if phase_col is not None:
+        target_phase = node_df.iloc[target_row_idx][phase_col].astype(str).str.lower().values
+
     if len(X) < 10:
         print(f"  Warning: only {len(X)} samples, skipping")
         return None, None, None
@@ -61,20 +99,43 @@ def train_node_model(node_df, window, horizon):
     train_mask = target_row_idx < train_end_row
     X_train, y_train = X[train_mask], y[train_mask]
     X_test, y_test = X[~train_mask], y[~train_mask]
+    phase_train = target_phase[train_mask]
 
     if len(X_train) < 10 or len(X_test) < 1:
         print(f"  Warning: insufficient split after leakage-safe partition (train={len(X_train)}, test={len(X_test)}), skipping")
         return None, None, None
 
+    # reserve a tail of the train period for calibration
+    calib_start = max(10, int(len(X_train) * 0.8))
+    X_fit, y_fit = X_train[:calib_start], y_train[:calib_start]
+    X_cal, y_cal = X_train[calib_start:], y_train[calib_start:]
+    phase_fit = phase_train[:calib_start]
+
+    sample_weight = np.ones(len(X_fit), dtype=float)
+    sample_weight[np.isin(phase_fit, ["cpu"]) ] = float(args.stress_weight)
+    sample_weight[np.isin(phase_fit, ["mixed"]) ] = float(args.mixed_weight)
+
     # train model
-    model = LinearRegression()
+    if args.model == "ridge":
+        model = Ridge(alpha=float(args.ridge_alpha))
+    else:
+        model = LinearRegression()
+
     start = time.time()
-    model.fit(X_train, y_train)
+    model.fit(X_fit, y_fit, sample_weight=sample_weight)
     train_time = time.time() - start
+
+    if len(X_cal) >= 10:
+        cal_pred = model.predict(X_cal)
+        calibration = fit_linear_calibrator(y_cal, cal_pred)
+    else:
+        calibration = {"alpha": [1.0] * len(FEATURES), "beta": [0.0] * len(FEATURES)}
 
     # evaluate on test set
     start = time.time()
     y_pred = model.predict(X_test)
+    y_pred = apply_calibration(y_pred, calibration)
+    y_pred = np.clip(y_pred, 0.0, 1.0)
     inference_time = (time.time() - start) / len(X_test) * 1000  # ms per prediction
 
     # metrics (on scaled data)
@@ -85,6 +146,8 @@ def train_node_model(node_df, window, horizon):
         "samples_total": len(X),
         "samples_train": len(X_train),
         "samples_test": len(X_test),
+        "samples_fit": len(X_fit),
+        "samples_calibration": len(X_cal),
         "train_time_s": round(train_time, 4),
         "inference_time_ms": round(inference_time, 4),
         "mae_per_feature": {f: round(v, 4) for f, v in zip(FEATURES, mae)},
@@ -93,7 +156,16 @@ def train_node_model(node_df, window, horizon):
         "rmse_mean": round(float(rmse.mean()), 4)
     }
 
-    return model, scaler, metrics
+    bundle = {
+        "model": model,
+        "model_type": args.model,
+        "calibration": calibration,
+        "window": window,
+        "horizon": horizon,
+        "features": FEATURES,
+    }
+
+    return bundle, scaler, metrics
 
 
 # load data
@@ -120,9 +192,9 @@ for node in df["node"].unique():
         print(f"  Missing columns: {missing}, skipping")
         continue
 
-    model, scaler, metrics = train_node_model(node_df, args.window, args.horizon)
+    model_bundle, scaler, metrics = train_node_model(node_df, args.window, args.horizon)
 
-    if model is None:
+    if model_bundle is None:
         continue
 
     # save model and scaler
@@ -131,7 +203,7 @@ for node in df["node"].unique():
     scaler_path = os.path.join(args.output_dir, f"scaler_{node_short}.pkl")
 
     with open(model_path, "wb") as f:
-        pickle.dump(model, f)
+        pickle.dump(model_bundle, f)
     with open(scaler_path, "wb") as f:
         pickle.dump(scaler, f)
 
@@ -145,6 +217,10 @@ for node in df["node"].unique():
 
 # save training summary
 summary = {
+    "model": args.model,
+    "ridge_alpha": args.ridge_alpha,
+    "stress_weight": args.stress_weight,
+    "mixed_weight": args.mixed_weight,
     "window": args.window,
     "horizon": args.horizon,
     "features": FEATURES,
