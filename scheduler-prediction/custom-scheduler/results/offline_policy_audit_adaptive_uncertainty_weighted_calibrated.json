@@ -1,0 +1,299 @@
+{
+  "config": {
+    "window": 5,
+    "warmup": 15,
+    "anomaly_history": 45,
+    "protocol_path": "scheduler-prediction/custom-scheduler/evaluation_protocol_adaptive_uncertainty.json",
+    "stage": "audit",
+    "selected_config": "scheduler-prediction/custom-scheduler/results/offline_policy_selection_adaptive_uncertainty_weighted_calibrated.json",
+    "validation_runs": [
+      "run_001",
+      "run_002",
+      "run_003",
+      "run_004",
+      "run_005",
+      "run_006",
+      "run_007",
+      "run_008",
+      "run_009",
+      "run_010",
+      "run_011",
+      "run_012",
+      "run_013",
+      "run_016",
+      "run_017",
+      "run_018"
+    ],
+    "test_runs": [
+      "run_014",
+      "run_015",
+      "run_019",
+      "run_020"
+    ],
+    "weight_grid": [
+      0.5,
+      0.6,
+      0.7,
+      0.8,
+      0.9
+    ],
+    "z_grid": [
+      2.0,
+      2.5,
+      3.0,
+      3.5
+    ]
+  },
+  "protocol": {
+    "version": 1,
+    "scheduler": {
+      "adaptive_weighting": true,
+      "adaptive_risk_low": 0.55,
+      "adaptive_risk_high": 0.9,
+      "adaptive_max_shift": 0.7,
+      "adaptive_min_prediction_weight": 0.2,
+      "adaptive_max_prediction_weight": 0.98,
+      "uncertainty_adjustment": true,
+      "uncertainty_weight_shift": 0.3,
+      "uncertainty_max_shift": 0.2,
+      "uncertainty_load_penalty": 0.15
+    },
+    "selection": {
+      "objective": "utility",
+      "utility_weights": {
+        "safe_placement_rate": 0.45,
+        "anomalous_rate": 0.25,
+        "high_contention_decision_rate": 0.15,
+        "latency": 0.1,
+        "placement_fairness_percent": 0.05
+      },
+      "latency_scale_ms": 1.0,
+      "contention_relative_cpu_threshold": 1.1,
+      "tie_breakers": [
+        "hybrid_safe_rate",
+        "hybrid_anomalous",
+        "hybrid_low_contention",
+        "hybrid_high_fairness",
+        "hybrid_latency"
+      ]
+    },
+    "data_split": {
+      "freeze_test_runs": true,
+      "test_runs": [
+        "run_014",
+        "run_015",
+        "run_019",
+        "run_020"
+      ]
+    },
+    "consistency_checks": {
+      "hybrid_vs_prediction_only": {
+        "min_positive_safe_delta_fraction": 0.75,
+        "require_nonpositive_anomalous_delta": true
+      }
+    }
+  },
+  "split_manifest": {
+    "frozen_by_protocol": true,
+    "protocol_path": "scheduler-prediction/custom-scheduler/evaluation_protocol_adaptive_uncertainty.json",
+    "stage": "audit",
+    "selected_config_source": "scheduler-prediction/custom-scheduler/results/offline_policy_selection_adaptive_uncertainty_weighted_calibrated.json",
+    "split_config_source": "scheduler-prediction/prediction/results/phase4_validation/locked_predictor_config.json",
+    "validation_runs": [
+      "run_001",
+      "run_002",
+      "run_003",
+      "run_004",
+      "run_005",
+      "run_006",
+      "run_007",
+      "run_008",
+      "run_009",
+      "run_010",
+      "run_011",
+      "run_012",
+      "run_013",
+      "run_016",
+      "run_017",
+      "run_018"
+    ],
+    "test_runs": [
+      "run_014",
+      "run_015",
+      "run_019",
+      "run_020"
+    ]
+  },
+  "selection_rule": {
+    "objective": "utility",
+    "utility_weights": {
+      "safe_placement_rate": 0.45,
+      "anomalous_rate": 0.25,
+      "high_contention_decision_rate": 0.15,
+      "latency": 0.1,
+      "placement_fairness_percent": 0.05
+    },
+    "latency_scale_ms": 1.0,
+    "contention_relative_cpu_threshold": 1.1,
+    "tie_breakers": [
+      "hybrid_safe_rate",
+      "hybrid_anomalous",
+      "hybrid_low_contention",
+      "hybrid_high_fairness",
+      "hybrid_latency"
+    ]
+  },
+  "grid_search_results": [],
+  "best_validation_config": {
+    "pred_weight": 0.9,
+    "anomaly_weight": 0.1,
+    "z_threshold": 3.5,
+    "validation_summary": null
+  },
+  "consistency_validation": null,
+  "consistency_test": {
+    "per_run": [
+      {
+        "run_id": "run_014",
+        "safe_placement_rate_delta": -1.29,
+        "anomalous_placements_delta": 3,
+        "anomalous_rate_delta": 1.29,
+        "avg_latency_ms_delta": -0.0164,
+        "utility_delta": -0.83686,
+        "is_positive_safe_delta": false,
+        "is_nonpositive_anom_delta": false
+      },
+      {
+        "run_id": "run_015",
+        "safe_placement_rate_delta": -0.77,
+        "anomalous_placements_delta": 2,
+        "anomalous_rate_delta": 0.77,
+        "avg_latency_ms_delta": -0.0214,
+        "utility_delta": -0.53686,
+        "is_positive_safe_delta": false,
+        "is_nonpositive_anom_delta": false
+      },
+      {
+        "run_id": "run_019",
+        "safe_placement_rate_delta": 0.0,
+        "anomalous_placements_delta": 0,
+        "anomalous_rate_delta": 0.0,
+        "avg_latency_ms_delta": -0.038,
+        "utility_delta": 0.0038,
+        "is_positive_safe_delta": false,
+        "is_nonpositive_anom_delta": true
+      },
+      {
+        "run_id": "run_020",
+        "safe_placement_rate_delta": 0.0,
+        "anomalous_placements_delta": 0,
+        "anomalous_rate_delta": 0.0,
+        "avg_latency_ms_delta": -0.0419,
+        "utility_delta": 0.00419,
+        "is_positive_safe_delta": false,
+        "is_nonpositive_anom_delta": true
+      }
+    ],
+    "summary": {
+      "positive_safe_delta_fraction": 0.0,
+      "required_positive_safe_delta_fraction": 0.75,
+      "require_nonpositive_anomalous_delta": true,
+      "passed": false
+    }
+  },
+  "untouched_test_evaluation": {
+    "runs": [
+      "run_014",
+      "run_015",
+      "run_019",
+      "run_020"
+    ],
+    "prediction_only": {
+      "decisions": 687,
+      "safe_placements": 684,
+      "anomalous_placements": 3,
+      "safe_placement_rate": 99.56,
+      "avg_decision_latency_ms": 0.4027,
+      "p95_decision_latency_ms": 0.5061,
+      "anomalous_rate": 0.44,
+      "placement_fairness_jain": 0.740207,
+      "placement_fairness_percent": 74.02,
+      "high_contention_decision_rate": 1.89,
+      "mean_relative_cpu_load": 0.5237,
+      "mean_chosen_observed_cpu": 9.3404,
+      "avg_effective_prediction_weight": 1.0,
+      "avg_effective_anomaly_weight": 0.0,
+      "avg_prediction_uncertainty": 0.0601,
+      "anomaly_weight_gt_prediction_fraction": 0.0,
+      "near_anomaly_only_fraction": 0.0,
+      "near_prediction_only_fraction": 1.0,
+      "utility_score": 48.06923
+    },
+    "anomaly_only": {
+      "decisions": 687,
+      "safe_placements": 623,
+      "anomalous_placements": 64,
+      "safe_placement_rate": 90.68,
+      "avg_decision_latency_ms": 0.3851,
+      "p95_decision_latency_ms": 0.4835,
+      "anomalous_rate": 9.32,
+      "placement_fairness_jain": 0.995341,
+      "placement_fairness_percent": 99.53,
+      "high_contention_decision_rate": 43.23,
+      "mean_relative_cpu_load": 0.8648,
+      "mean_chosen_observed_cpu": 18.7311,
+      "avg_effective_prediction_weight": 0.0,
+      "avg_effective_anomaly_weight": 1.0,
+      "avg_prediction_uncertainty": 0.0777,
+      "anomaly_weight_gt_prediction_fraction": 1.0,
+      "near_anomaly_only_fraction": 1.0,
+      "near_prediction_only_fraction": 0.0,
+      "utility_score": 36.92949
+    },
+    "hybrid": {
+      "decisions": 687,
+      "safe_placements": 679,
+      "anomalous_placements": 8,
+      "safe_placement_rate": 98.84,
+      "avg_decision_latency_ms": 0.3811,
+      "p95_decision_latency_ms": 0.4877,
+      "anomalous_rate": 1.16,
+      "placement_fairness_jain": 0.740207,
+      "placement_fairness_percent": 74.02,
+      "high_contention_decision_rate": 1.75,
+      "mean_relative_cpu_load": 0.5244,
+      "mean_chosen_observed_cpu": 9.5867,
+      "avg_effective_prediction_weight": 0.9525,
+      "avg_effective_anomaly_weight": 0.0475,
+      "avg_prediction_uncertainty": 0.057,
+      "anomaly_weight_gt_prediction_fraction": 0.0102,
+      "near_anomaly_only_fraction": 0.0,
+      "near_prediction_only_fraction": 0.9476,
+      "utility_score": 47.58839
+    },
+    "comparisons": {
+      "anomaly_only_vs_prediction_only": {
+        "safe_placement_rate_delta": -8.88,
+        "anomalous_placements_delta": 61,
+        "anomalous_rate_delta": 8.88,
+        "avg_latency_ms_delta": -0.0176,
+        "high_contention_rate_delta": 41.34,
+        "placement_fairness_delta": 25.51,
+        "avg_effective_anomaly_weight_delta": 1.0,
+        "near_anomaly_only_fraction_delta": 1.0,
+        "utility_delta": -11.13974
+      },
+      "hybrid_vs_prediction_only": {
+        "safe_placement_rate_delta": -0.72,
+        "anomalous_placements_delta": 5,
+        "anomalous_rate_delta": 0.72,
+        "avg_latency_ms_delta": -0.0216,
+        "high_contention_rate_delta": -0.14,
+        "placement_fairness_delta": 0.0,
+        "avg_effective_anomaly_weight_delta": 0.0475,
+        "near_anomaly_only_fraction_delta": 0.0,
+        "utility_delta": -0.48084
+      }
+    }
+  }
+}

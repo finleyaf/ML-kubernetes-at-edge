@@ -61,6 +61,7 @@ python custom-scheduler/offline_policy_evaluation.py \
   --model-dir prediction/models \
   --protocol custom-scheduler/evaluation_protocol.json \
   --split-config prediction/results/phase4_validation/locked_predictor_config.json \
+  --stage selection \
   --window 5 \
   --warmup 15 \
   --anomaly-history 45 \
@@ -79,6 +80,43 @@ This produces:
 - Final confirmation on untouched test runs.
 - Run-level consistency checks for hybrid vs prediction-only on validation and test splits.
 - A split manifest JSON saved next to the output for auditability.
+
+## Anti-Peeking Workflow (Recommended)
+
+Use two explicit stages to prevent accidental holdout peeking during iterative tuning:
+
+1. Selection stage (dev runs only, no holdout metrics written)
+
+```bash
+python custom-scheduler/offline_policy_evaluation.py \
+  --runs-dir ../anomaly-detection/online-telemetry/dataset/runs \
+  --model-dir prediction/models \
+  --protocol custom-scheduler/evaluation_protocol.json \
+  --split-config prediction/results/phase4_validation/locked_predictor_config.json \
+  --stage selection \
+  --weight-grid 0.5,0.6,0.7,0.8,0.9 \
+  --z-grid 2.0,2.5,3.0,3.5 \
+  --output custom-scheduler/results/offline_policy_selection.json
+```
+
+2. Audit stage (strict holdout only, fixed config from selection output)
+
+```bash
+python custom-scheduler/offline_policy_evaluation.py \
+  --runs-dir ../anomaly-detection/online-telemetry/dataset/runs \
+  --model-dir prediction/models \
+  --protocol custom-scheduler/evaluation_protocol.json \
+  --split-config prediction/results/phase4_validation/locked_predictor_config.json \
+  --stage audit \
+  --selected-config custom-scheduler/results/offline_policy_selection.json \
+  --output custom-scheduler/results/offline_policy_audit.json
+```
+
+Notes:
+
+- `--stage selection` never computes or emits holdout evaluation results.
+- `--stage audit` requires either `--selected-config` or both `--fixed-pred-weight` and `--fixed-z-threshold`.
+- `--stage both` is available for convenience but not recommended for iterative experimentation.
 
 ## Locked Evaluation Rules
 

@@ -93,6 +93,29 @@ class NodePredictor:
         score = 0.4 * min(cpu_load, 1.0) + 0.4 * mem_load + 0.2 * min(net_load, 1.0)
         return round(score, 4)
 
+    def prediction_uncertainty(self):
+        """Estimate prediction uncertainty from short-term volatility in the input window.
+
+        Returns a score in [0, 1], where higher means less stable recent behaviour.
+        """
+        if not self.ready():
+            return None
+
+        window = np.array(self.buffer[-self.window_size:], dtype=float)
+        scaled = self.scaler.transform(window)
+        std = np.std(scaled, axis=0)
+
+        cpu_std = (float(std[0]) + float(std[1])) * 0.5
+        mem_std = float(std[2])
+        net_std = (float(std[3]) + float(std[4])) * 0.5
+
+        # Map typical volatility range into a bounded uncertainty score.
+        cpu_u = min(cpu_std * 3.0, 1.0)
+        mem_u = min(mem_std * 3.0, 1.0)
+        net_u = min(net_std * 3.0, 1.0)
+        uncertainty = 0.4 * cpu_u + 0.4 * mem_u + 0.2 * net_u
+        return round(float(uncertainty), 4)
+
 
 class ClusterPredictor:
     """Manages predictors for all worker nodes in the cluster."""
@@ -128,9 +151,11 @@ class ClusterPredictor:
         results = {}
         for node, predictor in self.predictors.items():
             if predictor.ready():
+                pred_features = predictor.predict()
                 results[node] = {
-                    "features": predictor.predict(),
-                    "load_score": predictor.predicted_load()
+                    "features": pred_features,
+                    "load_score": predictor.predicted_load(),
+                    "uncertainty_score": predictor.prediction_uncertainty(),
                 }
         return results
 
