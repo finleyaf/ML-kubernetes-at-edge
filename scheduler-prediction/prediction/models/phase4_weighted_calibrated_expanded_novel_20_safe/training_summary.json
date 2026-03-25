@@ -1,0 +1,67 @@
+{
+  "model": "ridge",
+  "ridge_alpha": 1.0,
+  "stress_weight": 2.0,
+  "mixed_weight": 1.5,
+  "window": 5,
+  "horizon": 3,
+  "features": [
+    "cpu_user",
+    "cpu_system",
+    "ram_used",
+    "net_received",
+    "net_sent"
+  ],
+  "nodes": {
+    "k3s-worker-2": {
+      "samples_total": 5688,
+      "samples_train": 4549,
+      "samples_test": 1139,
+      "samples_fit": 3639,
+      "samples_calibration": 910,
+      "train_time_s": 0.003,
+      "inference_time_ms": 0.0001,
+      "mae_per_feature": {
+        "cpu_user": 0.1108,
+        "cpu_system": 0.0728,
+        "ram_used": 0.0398,
+        "net_received": 0.0142,
+        "net_sent": 0.0456
+      },
+      "rmse_per_feature": {
+        "cpu_user": 0.1847,
+        "cpu_system": 0.1245,
+        "ram_used": 0.0858,
+        "net_received": 0.0181,
+        "net_sent": 0.0966
+      },
+      "mae_mean": 0.0566,
+      "rmse_mean": 0.1019
+    },
+    "k3s-worker-3": {
+      "samples_total": 5687,
+      "samples_train": 4548,
+      "samples_test": 1139,
+      "samples_fit": 3638,
+      "samples_calibration": 910,
+      "train_time_s": 0.0024,
+      "inference_time_ms": 0.0001,
+      "mae_per_feature": {
+        "cpu_user": 0.0947,
+        "cpu_system": 0.0625,
+        "ram_used": 0.0911,
+        "net_received": 0.0021,
+        "net_sent": 0.0358
+      },
+      "rmse_per_feature": {
+        "cpu_user": 0.1839,
+        "cpu_system": 0.1123,
+        "ram_used": 0.1497,
+        "net_received": 0.0028,
+        "net_sent": 0.093
+      },
+      "mae_mean": 0.0572,
+      "rmse_mean": 0.1084
+    }
+  }
+}

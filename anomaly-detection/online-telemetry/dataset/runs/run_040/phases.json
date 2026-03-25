@@ -1,0 +1,54 @@
+[
+  {
+    "type": "baseline",
+    "name": "baseline",
+    "start": 1774303676,
+    "end": 1774303736
+  },
+  {
+    "type": "stress",
+    "name": "mixed_novel_1",
+    "start": 1774303736,
+    "end": 1774303799,
+    "target": "k3s-worker-3",
+    "intensity": "medium"
+  },
+  {
+    "type": "stress",
+    "name": "cpu_novel_2",
+    "start": 1774303799,
+    "end": 1774303831,
+    "target": "k3s-worker-2",
+    "intensity": "high"
+  },
+  {
+    "type": "stress",
+    "name": "io_novel_3",
+    "start": 1774303831,
+    "end": 1774303879,
+    "target": "k3s-worker-2",
+    "intensity": "low"
+  },
+  {
+    "type": "stress",
+    "name": "memory_novel_4",
+    "start": 1774303879,
+    "end": 1774303942,
+    "target": "k3s-control",
+    "intensity": "medium"
+  },
+  {
+    "type": "stress",
+    "name": "mixed_novel_5",
+    "start": 1774303942,
+    "end": 1774303976,
+    "target": "k3s-worker-2",
+    "intensity": "low"
+  },
+  {
+    "type": "recovery",
+    "name": "recovery",
+    "start": 1774303976,
+    "end": 1774304036
+  }
+]

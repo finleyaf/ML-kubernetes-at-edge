@@ -6,6 +6,9 @@ import time
 import requests
 
 DEFAULT_NODES = ["k3s-control", "k3s-worker-2", "k3s-worker-3"]
+REQUEST_TIMEOUT_S = 15
+REQUEST_RETRIES = 3
+REQUEST_RETRY_DELAY_S = 1
 
 
 def parse_args():
@@ -23,6 +26,23 @@ def resolve_output_path(custom_output):
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(script_dir, "..", "dataset", "dataset.csv")
+
+
+def fetch_chart(base_url, node, chart, params):
+    url = f"{base_url}/host/{node}/api/v1/data"
+    last_error = None
+    for attempt in range(1, REQUEST_RETRIES + 1):
+        try:
+            return requests.get(
+                url,
+                params={"chart": chart, **params},
+                timeout=REQUEST_TIMEOUT_S,
+            ).json()
+        except Exception as exc:
+            last_error = exc
+            if attempt < REQUEST_RETRIES:
+                time.sleep(REQUEST_RETRY_DELAY_S)
+    raise RuntimeError(f"request failed after {REQUEST_RETRIES} attempts: {last_error}")
 
 
 def main():
@@ -49,46 +69,46 @@ def main():
 
             for node in args.nodes:
                 try:
-                    cpu = requests.get(
-                        f"{args.base_url}/host/{node}/api/v1/data",
-                        params={
-                            "chart": "system.cpu",
+                    cpu = fetch_chart(
+                        args.base_url,
+                        node,
+                        "system.cpu",
+                        {
                             "after": -1,
                             "points": 1,
-                            "options": "percentage"
+                            "options": "percentage",
                         },
-                        timeout=5
-                    ).json()
+                    )
 
-                    ram = requests.get(
-                        f"{args.base_url}/host/{node}/api/v1/data",
-                        params={
-                            "chart": "system.ram",
+                    ram = fetch_chart(
+                        args.base_url,
+                        node,
+                        "system.ram",
+                        {
                             "after": -1,
-                            "points": 1
+                            "points": 1,
                         },
-                        timeout=5
-                    ).json()
+                    )
 
-                    net = requests.get(
-                        f"{args.base_url}/host/{node}/api/v1/data",
-                        params={
-                            "chart": "system.net",
+                    net = fetch_chart(
+                        args.base_url,
+                        node,
+                        "system.net",
+                        {
                             "after": -1,
-                            "points": 1
+                            "points": 1,
                         },
-                        timeout=5
-                    ).json()
+                    )
 
-                    load = requests.get(
-                        f"{args.base_url}/host/{node}/api/v1/data",
-                        params={
-                            "chart": "system.load",
+                    load = fetch_chart(
+                        args.base_url,
+                        node,
+                        "system.load",
+                        {
                             "after": -1,
-                            "points": 1
+                            "points": 1,
                         },
-                        timeout=5
-                    ).json()
+                    )
 
                     cpu_row = cpu["data"][0]
                     ram_row = ram["data"][0]

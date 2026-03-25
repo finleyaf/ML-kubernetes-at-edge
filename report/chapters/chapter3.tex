@@ -1,13 +1,179 @@
 \chapter{Methodology}
 \label{chapter3}
 
-<Everything that comes under the `Methodology' criterion in the mark scheme should be described in one, or possibly more than one, chapter(s).>
+<Everything that comes under the `Methodology' criterion in the mark scheme should be described in one, or possibly more than one, chapter(s):>
+* Design of the solution, supported by justification of choices made.
+* Evidence that software was properly managed using a version control system, and
+followed standard good practice in design and structure.
+Depending on the nature of the project, could also include:
+* Evidence of data collection and preparation.
+* Schematic diagrams and description of overall software architecture
+* Details of the project management approach that was used, eg. sprints
 
-\section{A section}
-\lipsum[5]
+\section{Methodology Overview}
 
-\subsection{A sub-section}
-\lipsum[6]
 
-\section{Another section}
-\lipsum[7]
+
+
+\subsection{Research Questions and Hypotheses}
+
+RQ1: can anomaly + prediction improve scheduling decisions vs prediction-only baseline?
+RQ2: does the method preserve low decision latency suitable for edge context?
+RQ3: does the selected policy generalise to untouched holdout runs?
+
+
+\section{System and Data Method}
+
+
+\subsection{End-to-End Experimental Pipeline}
+
+Pipeline stages [clear and concise overview + diagram]:
+
+1) run generation and collection (run_campaign.py/run_additional_novel_pipeline.py/netdata_collector.py): each run contains three phases: baseline, stress, recovery. Baseline and recovery simulate stable environment conditions, this acts as a contrast to heavy load and gives the system time to react and stablise after heavy load. Stress is broken down into its own phases where each phase has a target metric, target node, and intensity. A sequence of stress phases is completed on each run.
+
+Metrics are collected by polling a set of pre-defined Netdata charts via the Netdata API. The following charts are used to poll for CPU, MEMORY, IO: system.cpu, system.ram, system.net, system.load. Stress phases work by manual stress triggers in the CLI during polling.
+
+2) phase labelling and preprocessing: phases are labelled using timestamps, a start and end timestamp is collected for each predefined stage which is then saved and used to label data.
+
+3) predictor training/calibration(train_predictor.py): The following arguments are required for training:
+input: raw dataset from the netdata collector
+window: sliding window size for number of past timesteps
+horizon: prediction steps ahead
+output: output directory
+model: linear/ridge regression model
+ridge alpha: regularisation strength for ridge
+stress weight: sample weight multiplier for CPU phase
+mixed weight: sample weight multiplier for mixed phase
+A sequence of sliding windows are created using window/horizon pairs. For each 'window' window of timesteps, predict values 'horizon' steps into the future. for linear calibration y_true is calculated as ~= a*y_pred + b per feature. Linear regression is applyed...
+
+4) scheduler policy scoring: after training on a set of runs, based on the scheduler policy, the optimal value weights for prediction and anomaly are calculated + z_threshold. The policy is instructed by safe pod placement rate, anomalous placement rate, high contention rate, latency, and placemnt fairness percentage.
+
+5) selection-stage tuning on development runs: 
+
+6) fixed audit on strict holdout: various parameters are fixed on strict holdout.
+
+7) old-vs-new comparison after novel-run expansion: a comparison of the evaluations made with and without the novel pipeline was made to measure the significance.
+
+Why staged design prevents accidental leakage:
+
+[distribute detail from this section as too dense]
+
+
+\subsection{Run Construction, Labelling, and Dataset Governance}
+
+[run construction overlap with pipeline(1)]
+Data is labelled per phase. dataset from metric collection is taken as input and then for each stress phase only the targeted node for that phase is labelled. Once all phases are labelled the labelled dataset is output. Although the control node is present is collection + labelling, once evaluation starts the focus shifts to only worker nodes. This is because worker nodes carry all the load for the processes which we evaluate.
+
+Governance rules: 
+
+Exclusion/repair policy: 
+
+Novel run expansion: 22 additional runs were completed with deliberately abrupt stress patterns. This is to closely match the expected unexpectency in edge environements and to challenge the hybrid model is those particular situations.
+
+
+\subsection{Feature Engineering and Preprocessing Choices}
+
+Input features for prediction: cpu_user, cpu_system, ram_used, net_received, net_sent
+
+Preprocessing sequence: cpu_user + cpu_system combined into single cpu feature. net_received + net_sent combined into single net feature. Rolling mean smoothing is applying per node to avoid cross-node smoothing + min/max normalisation.
+
+Detector side vs predictor side preprocessing:
+
+Smoothing is used to suppress noise which is abundant in edge environments, however, excessive smoothing can interfere with anomaly seperability.
+
+Predictor window/horizon choices + rationale:
+
+
+\section{Predictive Modeling Method}
+
+
+\subsection{Predictor Design and Training Protocol}
+
+Of the prediction approaches surveyed, linear regression with a sliding window input is the
+most appropriate for this context. LSTM-RNNs and ENNs achieve strong accuracy on
+complex, non-stationary workloads but impose training and inference costs that are
+incompatible with edge resource constraints. ARIMA requires separate model fitting per
+time-series and is poorly suited to multi-dimensional, correlated resource metrics. A
+sliding-window linear regression, by contrast, produces sub-millisecond inference, requires no
+runtime retraining, and is sufficiently expressive for the short prediction horizons relevant to
+scheduling decisions (five seconds ahead). When applied to metrics that have been smoothed
+by a rolling mean—as is standard in the preprocessing pipeline adopted here—the temporal
+dependencies become approximately linear, making the simpler model competitive in accuracy
+while remaining deployable on edge hardware. This project therefore adopts linear regression
+as the prediction component, integrated with K-means and NSA anomaly detection within a
+custom Kubernetes scheduling component.
+
+During validation, window values of (5, 10) and horizon values of (3, 5) were used with the best linear config of window:5 and horizon:3 being the outcome.
+
+
+\subsection{Predictor Evaluation Method (Pre-Scheduler)}
+
+The following metrics were used for predictor evaluation: MAE, RMSE, sMAPE.
+These metrics were chosen because...
+The evaluation at this stage was for forecasting quality only, not scheduling performance, but will be used to influence the decision for prediction in the hybrid model.
+
+
+\section{Hybrid Scheduler Method} 
+
+
+\subsection{Node Risk and Scoring Formulation}
+
+Anomaly risk estimation: 
+
+Predicted load estimation:
+
+Hybrid score combination: 
+
+Fixed vs. adaptive weighting: fixed weighting is used when a predefined weight is assigned to the predictive and anomaly detecting components of the hybrid model during training. Adaptive weighting allows for weights to adapt for each component in order to find a more optimal split.
+
+Score interpretation:
+
+
+\subsection{Policy Varients for Controlled Comparison}
+
+Three separate scheduler policies were tested: anomaly-only, prediction-only, and hybrid. This is necessary to show where each individual component (anomaly, prediction) has the most value, and then to combine these functions optimally for the hybrid variant. This is made possible since each policy is evaluated using the same decision points.
+
+[unsure of exact policy definitions]
+
+
+\section{Evaluation Protocol and Selection Governance}
+
+
+\subsection{Selection Stage (Development-Only)}
+
+Policy selection for the hybrid variant is then decided by weights and z-score threshold. Each of anomaly and prediction are assigned a weight (normalised sum to 1), fixed and adaptive weights were both tested. Fixed weights forced the model to use a certain component in less than optimal situations, whereas, adaptive allowed for more intelligent weight selection and such better overall decisions.
+
+Z-score explaination:
+
+Best configuration objective function:
+
+Untouched holdout:
+
+Consistency checks on development data:
+
+[table]
+
+
+\subsection{Audit Stage (Strict Holdout, Fixed Config)}
+
+Selected configuration is frozen before holdout evaluation because:
+
+Holdout metrics and key hybrid deltas:
+
+Anomaly-present holdout slice evaluation:
+
+Old vs. new comparison after dataset expansion:
+
+[table]
+
+
+\section{Validity, Reliability, and Reproduccibility}
+
+
+\subsection{Threats to Validity and Mitigations}
+
+
+\subsection{Reproducibility Package}
+
+
+\section{Methodology Summary}
