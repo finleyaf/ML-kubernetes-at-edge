@@ -1,0 +1,121 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36" version="29.6.1">
+  <diagram id="prtHgNgQTEPvFCAcTncT" name="Page-1">
+    <mxGraphModel dx="1131" dy="706" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-16" parent="1" style="swimlane;whiteSpace=wrap;html=1;" value="End-to-end pipeline" vertex="1">
+          <mxGeometry height="697" width="840" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-19" parent="6BMzVjvx4dyykwZPu_MO-16" style="swimlane;whiteSpace=wrap;html=1;" value="Outputs" vertex="1">
+          <mxGeometry height="547" width="120" x="720" y="23" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-25" parent="6BMzVjvx4dyykwZPu_MO-19" style="rounded=1;whiteSpace=wrap;html=1;" value="End of campaign" vertex="1">
+          <mxGeometry height="40" width="80" x="20" y="492" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-59" parent="6BMzVjvx4dyykwZPu_MO-19" style="rounded=0;whiteSpace=wrap;html=1;" value="Per policy metrics" vertex="1">
+          <mxGeometry height="40" width="80" x="20" y="317" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-60" parent="6BMzVjvx4dyykwZPu_MO-19" style="rounded=0;whiteSpace=wrap;html=1;" value="Pairwise deltas" vertex="1">
+          <mxGeometry height="40" width="80" x="20" y="377" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-61" parent="6BMzVjvx4dyykwZPu_MO-19" style="rounded=0;whiteSpace=wrap;html=1;" value="Consistency checks" vertex="1">
+          <mxGeometry height="40" width="80" x="20" y="437" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-20" parent="6BMzVjvx4dyykwZPu_MO-16" style="swimlane;whiteSpace=wrap;html=1;" value="Dataset Construction" vertex="1">
+          <mxGeometry height="547" width="120" x="120" y="23" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-29" parent="6BMzVjvx4dyykwZPu_MO-20" style="rounded=0;whiteSpace=wrap;html=1;" value="Load run artifacts" vertex="1">
+          <mxGeometry height="40" width="80" x="20" y="41" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-30" parent="6BMzVjvx4dyykwZPu_MO-20" style="rounded=0;whiteSpace=wrap;html=1;" value="Assign phase_name from phases.json" vertex="1">
+          <mxGeometry height="40" width="80" x="20" y="97" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-31" parent="6BMzVjvx4dyykwZPu_MO-20" style="rounded=0;whiteSpace=wrap;html=1;" value="Create phase-labelled datasets" vertex="1">
+          <mxGeometry height="40" width="80" x="20" y="157" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-32" parent="6BMzVjvx4dyykwZPu_MO-20" style="rounded=0;whiteSpace=wrap;html=1;" value="Apply locked split configuration" vertex="1">
+          <mxGeometry height="40" width="80" x="20" y="217" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-21" parent="6BMzVjvx4dyykwZPu_MO-16" style="swimlane;whiteSpace=wrap;html=1;" value="Predictor Pipeline" vertex="1">
+          <mxGeometry height="547" width="120" x="240" y="23" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-33" parent="6BMzVjvx4dyykwZPu_MO-21" style="rounded=0;whiteSpace=wrap;html=1;" value="Train predictor (window=5, horizon=3)" vertex="1">
+          <mxGeometry height="40" width="80" x="20" y="41" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-34" parent="6BMzVjvx4dyykwZPu_MO-21" style="rounded=0;whiteSpace=wrap;html=1;" value="Calibrate probabilities" vertex="1">
+          <mxGeometry height="40" width="80" x="20" y="97" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-35" parent="6BMzVjvx4dyykwZPu_MO-21" style="rounded=0;whiteSpace=wrap;html=1;" value="Evaluate on strict holdout" vertex="1">
+          <mxGeometry height="40" width="80" x="20" y="157" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-36" parent="6BMzVjvx4dyykwZPu_MO-21" style="rounded=0;whiteSpace=wrap;html=1;" value="Generate calibration diagnostics" vertex="1">
+          <mxGeometry height="40" width="80" x="20" y="217" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-22" parent="6BMzVjvx4dyykwZPu_MO-16" style="swimlane;whiteSpace=wrap;html=1;" value="Scheduler Policy Pipeline" vertex="1">
+          <mxGeometry height="547" width="360" x="360" y="23" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-57" parent="6BMzVjvx4dyykwZPu_MO-22" style="rounded=0;whiteSpace=wrap;html=1;" value="" vertex="1">
+          <mxGeometry height="93" width="120" x="20" y="438" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-37" parent="6BMzVjvx4dyykwZPu_MO-22" style="rounded=0;whiteSpace=wrap;html=1;" value="Load protocol + model + locked split" vertex="1">
+          <mxGeometry height="40" width="80" x="140" y="41" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-38" parent="6BMzVjvx4dyykwZPu_MO-22" style="rounded=0;whiteSpace=wrap;html=1;" value="Replay placement decisions per run" vertex="1">
+          <mxGeometry height="40" width="80" x="140" y="97" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-39" parent="6BMzVjvx4dyykwZPu_MO-22" style="rhombus;whiteSpace=wrap;html=1;" value="Policy variant" vertex="1">
+          <mxGeometry height="80" width="80" x="140" y="157" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-40" parent="6BMzVjvx4dyykwZPu_MO-22" style="rounded=0;whiteSpace=wrap;html=1;" value="" vertex="1">
+          <mxGeometry height="62" width="120" x="20" y="248" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-44" parent="6BMzVjvx4dyykwZPu_MO-22" style="rounded=0;whiteSpace=wrap;html=1;" value="Anomaly-only" vertex="1">
+          <mxGeometry height="19" width="100" x="30" y="283" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-45" parent="6BMzVjvx4dyykwZPu_MO-22" style="rounded=0;whiteSpace=wrap;html=1;" value="Prediction-only" vertex="1">
+          <mxGeometry height="30" width="100" x="230" y="248" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-48" parent="6BMzVjvx4dyykwZPu_MO-22" style="rounded=0;whiteSpace=wrap;html=1;" value="Selection stage on development runs" vertex="1">
+          <mxGeometry height="40" width="80" x="240" y="317" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-49" parent="6BMzVjvx4dyykwZPu_MO-22" style="rounded=0;whiteSpace=wrap;html=1;" value="Freeze best configuration" vertex="1">
+          <mxGeometry height="40" width="80" x="240" y="377" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-50" parent="6BMzVjvx4dyykwZPu_MO-22" style="rounded=0;whiteSpace=wrap;html=1;" value="Audit stage on strict holdout" vertex="1">
+          <mxGeometry height="40" width="80" x="240" y="437" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-52" parent="6BMzVjvx4dyykwZPu_MO-22" style="rhombus;whiteSpace=wrap;html=1;" value="Policy variant" vertex="1">
+          <mxGeometry height="80" width="80" x="40" y="327" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-53" parent="6BMzVjvx4dyykwZPu_MO-22" style="rounded=0;whiteSpace=wrap;html=1;" value="Hybrid" vertex="1">
+          <mxGeometry height="19" width="100" x="30" y="256" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-54" parent="6BMzVjvx4dyykwZPu_MO-22" style="rounded=0;whiteSpace=wrap;html=1;" value="K-means" vertex="1">
+          <mxGeometry height="19" width="100" x="30" y="474" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-55" parent="6BMzVjvx4dyykwZPu_MO-22" style="rounded=0;whiteSpace=wrap;html=1;" value="Z-score" vertex="1">
+          <mxGeometry height="19" width="100" x="30" y="447" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-56" parent="6BMzVjvx4dyykwZPu_MO-22" style="rounded=0;whiteSpace=wrap;html=1;" value="NSA" vertex="1">
+          <mxGeometry height="19" width="100" x="30" y="502" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-17" parent="1" style="swimlane;whiteSpace=wrap;html=1;" value="Telemetry Data Generation" vertex="1">
+          <mxGeometry height="547" width="120" y="73" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-23" parent="6BMzVjvx4dyykwZPu_MO-17" style="rounded=1;whiteSpace=wrap;html=1;" value="Start campaign plan" vertex="1">
+          <mxGeometry height="40" width="80" x="20" y="41" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-26" parent="6BMzVjvx4dyykwZPu_MO-17" style="rounded=0;whiteSpace=wrap;html=1;" value="Run workload phases per run" vertex="1">
+          <mxGeometry height="40" width="80" x="20" y="97" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-27" parent="6BMzVjvx4dyykwZPu_MO-17" style="rounded=0;whiteSpace=wrap;html=1;" value="Collect telemetry at interval" vertex="1">
+          <mxGeometry height="40" width="80" x="20" y="157" as="geometry" />
+        </mxCell>
+        <mxCell id="6BMzVjvx4dyykwZPu_MO-28" parent="6BMzVjvx4dyykwZPu_MO-17" style="rounded=0;whiteSpace=wrap;html=1;" value="Store per run artifacts" vertex="1">
+          <mxGeometry height="40" width="80" x="20" y="217" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

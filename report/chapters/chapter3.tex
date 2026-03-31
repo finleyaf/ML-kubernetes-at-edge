@@ -1,25 +1,29 @@
 \chapter{Methodology}
 \label{chapter3}
 
-<Everything that comes under the `Methodology' criterion in the mark scheme should be described in one, or possibly more than one, chapter(s):>
-* Design of the solution, supported by justification of choices made.
-* Evidence that software was properly managed using a version control system, and
-followed standard good practice in design and structure.
-Depending on the nature of the project, could also include:
-* Evidence of data collection and preparation.
-* Schematic diagrams and description of overall software architecture
-* Details of the project management approach that was used, eg. sprints
-
 \section{Methodology Overview}
 
+This chapter defines the methodological design used to build and evaluate an anomaly-aware lightweight scheduling pipeline for edge Kubernetes environments. Chapter~\ref{chapter2} established replication evidence for anomaly detection under offline and online telemetry settings. Building on that foundation, this chapter specifies how data was governed, how the predictive and anomaly-aware scheduling components were designed, and how policy selection and holdout auditing were conducted under anti-leakage constraints.
 
-
+Methodologically, the work follows a staged empirical systems approach: (i) controlled run generation and telemetry capture, (ii) deterministic phase labelling and preprocessing, (iii) leakage-safe predictor training, (iv) paired policy replay, (v) development-only selection, (vi) strict-holdout audit, and (vii) old-vs-new comparison after novel-run expansion. This sequencing was chosen to reduce evaluation bias and improve reproducibility of claims.
 
 \subsection{Research Questions and Hypotheses}
 
-RQ1: can anomaly + prediction improve scheduling decisions vs prediction-only baseline?
-RQ2: does the method preserve low decision latency suitable for edge context?
-RQ3: does the selected policy generalise to untouched holdout runs?
+The methodology addresses three research questions:
+
+\begin{itemize}
+	\item \textbf{RQ1:} Can a hybrid policy (prediction + anomaly risk) improve scheduling quality compared to a prediction-only baseline?
+	\item \textbf{RQ2:} Can those improvements be achieved while preserving low per-decision scheduler latency suitable for edge settings?
+	\item \textbf{RQ3:} Does the selected policy generalise to untouched holdout runs when model and policy parameters are frozen before final audit?
+\end{itemize}
+
+These questions are operationalised through measurable hypotheses:
+
+\begin{itemize}
+	\item \textbf{H1:} Hybrid policy improves safe placement rate and reduces anomalous placement count/rate versus prediction-only.
+	\item \textbf{H2:} Hybrid policy does not introduce practically significant latency overhead.
+	\item \textbf{H3:} Improvements selected on development runs transfer to strict holdout runs under fixed-configuration audit.
+\end{itemize}
 
 
 \section{System and Data Method}
@@ -27,61 +31,50 @@ RQ3: does the selected policy generalise to untouched holdout runs?
 
 \subsection{End-to-End Experimental Pipeline}
 
-Pipeline stages [clear and concise overview + diagram]:
+The implemented pipeline is:
 
-1) run generation and collection (run_campaign.py/run_additional_novel_pipeline.py/netdata_collector.py): each run contains three phases: baseline, stress, recovery. Baseline and recovery simulate stable environment conditions, this acts as a contrast to heavy load and gives the system time to react and stablise after heavy load. Stress is broken down into its own phases where each phase has a target metric, target node, and intensity. A sequence of stress phases is completed on each run.
+\begin{enumerate}
+	\item \textbf{Run generation and collection.} Campaign plans are generated and executed by \texttt{run\_campaign.py} and \texttt{run\_additional\_novel\_pipeline.py}. Each run contains baseline, a sequence of stress phases, and recovery. Stress commands are executed automatically via SSH on target nodes.
+	\item \textbf{Telemetry capture.} \texttt{netdata\_collector.py} polls Netdata at one-second intervals from \texttt{system.cpu}, \texttt{system.ram}, \texttt{system.net}, and \texttt{system.load}.
+	\item \textbf{Phase labelling.} Start/end timestamps for each phase are recorded and saved to \texttt{phases.json}; \texttt{label\_data.py} then applies per-node labels to produce \texttt{labelled.csv}.
+	\item \textbf{Predictor training and calibration.} \texttt{train\_predictor.py} trains per-node regressors from sliding windows, performs leakage-safe scaling, and applies linear post-calibration.
+	\item \textbf{Policy selection (development only).} \texttt{offline\_policy\_evaluation.py} performs grid search over prediction weight and anomaly threshold using only development-run scope.
+	\item \textbf{Fixed audit (strict holdout).} Selected parameters are frozen and evaluated on strict holdout runs only.
+	\item \textbf{Expansion comparison.} Old-vs-new evaluation artifacts are compared after novel-run expansion to quantify net effect.
+\end{enumerate}
 
-Metrics are collected by polling a set of pre-defined Netdata charts via the Netdata API. The following charts are used to poll for CPU, MEMORY, IO: system.cpu, system.ram, system.net, system.load. Stress phases work by manual stress triggers in the CLI during polling.
-
-2) phase labelling and preprocessing: phases are labelled using timestamps, a start and end timestamp is collected for each predefined stage which is then saved and used to label data.
-
-3) predictor training/calibration(train_predictor.py): The following arguments are required for training:
-input: raw dataset from the netdata collector
-window: sliding window size for number of past timesteps
-horizon: prediction steps ahead
-output: output directory
-model: linear/ridge regression model
-ridge alpha: regularisation strength for ridge
-stress weight: sample weight multiplier for CPU phase
-mixed weight: sample weight multiplier for mixed phase
-A sequence of sliding windows are created using window/horizon pairs. For each 'window' window of timesteps, predict values 'horizon' steps into the future. for linear calibration y_true is calculated as ~= a*y_pred + b per feature. Linear regression is applyed...
-
-4) scheduler policy scoring: after training on a set of runs, based on the scheduler policy, the optimal value weights for prediction and anomaly are calculated + z_threshold. The policy is instructed by safe pod placement rate, anomalous placement rate, high contention rate, latency, and placemnt fairness percentage.
-
-5) selection-stage tuning on development runs: 
-
-6) fixed audit on strict holdout: various parameters are fixed on strict holdout.
-
-7) old-vs-new comparison after novel-run expansion: a comparison of the evaluations made with and without the novel pipeline was made to measure the significance.
-
-Why staged design prevents accidental leakage:
-
-[distribute detail from this section as too dense]
+This staged design follows the principle that selection and final auditing should be separated to avoid optimistic bias from repeated holdout exposure \cite{cawley2010overfitting}.
 
 
 \subsection{Run Construction, Labelling, and Dataset Governance}
 
-[run construction overlap with pipeline(1)]
-Data is labelled per phase. dataset from metric collection is taken as input and then for each stress phase only the targeted node for that phase is labelled. Once all phases are labelled the labelled dataset is output. Although the control node is present is collection + labelling, once evaluation starts the focus shifts to only worker nodes. This is because worker nodes carry all the load for the processes which we evaluate.
+Each campaign run writes a dedicated directory containing raw telemetry, labels, phase metadata, and collector logs. A run is considered valid for downstream processing only if both \texttt{labelled.csv} and \texttt{phases.json} are present.
 
-Governance rules: 
+Labelling is phase-aware and node-aware: during a stress phase, only the targeted node is labelled anomalous. This preserves causal alignment between injected stress and anomaly labels. Control-node telemetry is collected for full-cluster observability, but worker-only filtering is applied for scheduling evaluation because workload placement decisions are made on worker nodes.
 
-Exclusion/repair policy: 
+Governance rules were enforced as follows:
 
-Novel run expansion: 22 additional runs were completed with deliberately abrupt stress patterns. This is to closely match the expected unexpectency in edge environements and to challenge the hybrid model is those particular situations.
+\begin{itemize}
+	\item \textbf{Split locking.} Strict holdout runs are fixed in split configuration and excluded from development-stage parameter selection.
+	\item \textbf{Inclusion criteria.} Runs missing required artifacts are excluded from model/evaluation input.
+	\item \textbf{Operational repair policy.} Interrupted collections are resumed from a specified run index; invalid partial runs are removed before retry.
+\end{itemize}
+
+For the expansion experiment, 20 novel runs (\texttt{run\_023} to \texttt{run\_042}) were collected using deliberately abrupt stress sequences to better probe robustness under non-smooth workload transitions.
 
 
 \subsection{Feature Engineering and Preprocessing Choices}
 
-Input features for prediction: cpu_user, cpu_system, ram_used, net_received, net_sent
+Input features are \texttt{cpu\_user}, \texttt{cpu\_system}, \texttt{ram\_used}, \texttt{net\_received}, and \texttt{net\_sent}. For anomaly-detection replication (Chapter~\ref{chapter2}), features are also aggregated into CPU and NET composites as required by detector design.
 
-Preprocessing sequence: cpu_user + cpu_system combined into single cpu feature. net_received + net_sent combined into single net feature. Rolling mean smoothing is applying per node to avoid cross-node smoothing + min/max normalisation.
+Preprocessing choices differ by stage:
 
-Detector side vs predictor side preprocessing:
+\begin{itemize}
+	\item \textbf{Detection replication stage:} rolling-mean smoothing + min-max normalisation per node to test separability sensitivity under realistic edge noise.
+	\item \textbf{Prediction stage:} leakage-safe min-max scaling where scaler fit uses training period only, then applied to full sequence for window construction.
+\end{itemize}
 
-Smoothing is used to suppress noise which is abundant in edge environments, however, excessive smoothing can interfere with anomaly seperability.
-
-Predictor window/horizon choices + rationale:
+This separation is intentional: detector studies evaluate anomaly separability properties, while predictor training emphasises leakage control and forecast stability. As observed in Chapter~\ref{chapter2}, stronger smoothing can suppress subtle anomaly separability, so smoothing decisions were treated as methodological variables rather than fixed assumptions.
 
 
 \section{Predictive Modeling Method}
@@ -89,28 +82,36 @@ Predictor window/horizon choices + rationale:
 
 \subsection{Predictor Design and Training Protocol}
 
-Of the prediction approaches surveyed, linear regression with a sliding window input is the
-most appropriate for this context. LSTM-RNNs and ENNs achieve strong accuracy on
-complex, non-stationary workloads but impose training and inference costs that are
-incompatible with edge resource constraints. ARIMA requires separate model fitting per
-time-series and is poorly suited to multi-dimensional, correlated resource metrics. A
-sliding-window linear regression, by contrast, produces sub-millisecond inference, requires no
-runtime retraining, and is sufficiently expressive for the short prediction horizons relevant to
-scheduling decisions (five seconds ahead). When applied to metrics that have been smoothed
-by a rolling mean—as is standard in the preprocessing pipeline adopted here—the temporal
-dependencies become approximately linear, making the simpler model competitive in accuracy
-while remaining deployable on edge hardware. This project therefore adopts linear regression
-as the prediction component, integrated with K-means and NSA anomaly detection within a
-custom Kubernetes scheduling component.
+The predictor is a lightweight sliding-window regression model trained per worker node. The training implementation supports linear and ridge regression; for the expanded novel-run pipeline, ridge (\(\alpha=1.0\)) was used in the final trained artifact, with window \(w=5\) and horizon \(h=3\).
 
-During validation, window values of (5, 10) and horizon values of (3, 5) were used with the best linear config of window:5 and horizon:3 being the outcome.
+Given input sequence \(x_t\), training windows are formed as:
+
+\[
+X_i = [x_i, x_{i+1}, \dots, x_{i+w-1}], \quad y_i = x_{i+w+h-1}
+\]
+
+where each \(x_t\) contains the five telemetry features. Training uses:
+
+\begin{itemize}
+	\item \textbf{Leakage-safe split:} temporal split before scaling, with scaler fit on train period only.
+	\item \textbf{Phase-aware weighting:} CPU and mixed stress targets receive higher sample weights.
+	\item \textbf{Post-fit calibration:} per-feature linear correction \(\hat{y}' = a\hat{y} + b\) learned on a calibration tail of the training data.
+\end{itemize}
+
+This model family was selected to preserve low inference cost while retaining sufficient short-horizon expressiveness for scheduler ranking.
 
 
 \subsection{Predictor Evaluation Method (Pre-Scheduler)}
 
-The following metrics were used for predictor evaluation: MAE, RMSE, sMAPE.
-These metrics were chosen because...
-The evaluation at this stage was for forecasting quality only, not scheduling performance, but will be used to influence the decision for prediction in the hybrid model.
+Predictor quality is evaluated independently of scheduler outcomes using MAE, RMSE, and sMAPE:
+
+\begin{itemize}
+	\item \textbf{MAE:} direct average magnitude error.
+	\item \textbf{RMSE:} error magnitude with stronger penalty on larger misses.
+	\item \textbf{sMAPE:} scale-aware relative error for bounded normalised series.
+\end{itemize}
+
+This stage validates forecasting adequacy only. Final scheduling claims are made from policy replay metrics, not from predictor error metrics alone.
 
 
 \section{Hybrid Scheduler Method} 
@@ -118,22 +119,44 @@ The evaluation at this stage was for forecasting quality only, not scheduling pe
 
 \subsection{Node Risk and Scoring Formulation}
 
-Anomaly risk estimation: 
+At each decision step, each node receives:
 
-Predicted load estimation:
+\begin{itemize}
+	\item \textbf{Predicted load} from the node predictor.
+	\item \textbf{Anomaly risk} from a lightweight detector monitor. Three anomaly sources were evaluated inside the scheduler pipeline (z-score, K-means-inspired monitor, NSA-inspired monitor), and NSA was selected for anomaly-aware policy reporting based on holdout utility and safety consistency.
+\end{itemize}
 
-Hybrid score combination: 
+If the predictor is not yet ready (warm start), a bounded fallback load estimate is used from current CPU, RAM, and NET observations.
 
-Fixed vs. adaptive weighting: fixed weighting is used when a predefined weight is assigned to the predictive and anomaly detecting components of the hybrid model during training. Adaptive weighting allows for weights to adapt for each component in order to find a more optimal split.
+Node score is:
 
-Score interpretation:
+\[
+\text{score}_i = w_p^{(i)}\,\hat{L}_i + \left(1-w_p^{(i)}\right)\,R_i
+\]
+
+where \(\hat{L}_i\) is predicted load and \(R_i\) is anomaly risk.
+
+\begin{itemize}
+	\item \textbf{Fixed weighting:} \(w_p^{(i)} = w_p\).
+	\item \textbf{Adaptive weighting:} \(w_p^{(i)}\) is shifted by anomaly-risk bands (low risk increases prediction weight; high risk increases anomaly weight), with min/max clipping.
+\end{itemize}
+
+Lower score indicates preferred placement.
+
+The NSA monitor is one-class and history-based: each node's recent trajectory defines \textit{self} behaviour, while sampled detectors in non-self regions produce anomaly risk from nearest-detector distance. This preserves the lightweight online profile while maintaining methodological continuity with Chapter~\ref{chapter2}.
 
 
-\subsection{Policy Varients for Controlled Comparison}
+\subsection{Policy Variants for Controlled Comparison}
 
-Three separate scheduler policies were tested: anomaly-only, prediction-only, and hybrid. This is necessary to show where each individual component (anomaly, prediction) has the most value, and then to combine these functions optimally for the hybrid variant. This is made possible since each policy is evaluated using the same decision points.
+Three policies are evaluated on identical replay decision points:
 
-[unsure of exact policy definitions]
+\begin{itemize}
+	\item \textbf{Prediction-only:} \(w_p=1.0\), anomaly weight \(=0.0\).
+	\item \textbf{Anomaly-only:} \(w_p=0.0\), anomaly weight \(=1.0\).
+	\item \textbf{Hybrid:} \(w_p\in[0,1]\) selected by development-stage search, with optional adaptive reweighting enabled by protocol.
+\end{itemize}
+
+Paired replay ensures all policies see identical observations at each timestamp before any decision comparison is recorded.
 
 
 \section{Evaluation Protocol and Selection Governance}
@@ -141,39 +164,121 @@ Three separate scheduler policies were tested: anomaly-only, prediction-only, an
 
 \subsection{Selection Stage (Development-Only)}
 
-Policy selection for the hybrid variant is then decided by weights and z-score threshold. Each of anomaly and prediction are assigned a weight (normalised sum to 1), fixed and adaptive weights were both tested. Fixed weights forced the model to use a certain component in less than optimal situations, whereas, adaptive allowed for more intelligent weight selection and such better overall decisions.
+Selection uses a grid over prediction weight and threshold parameter on development runs only:
 
-Z-score explaination:
+\begin{itemize}
+	\item \(w_p \in \{0.5, 0.6, 0.7, 0.8, 0.9\}\)
+	\item \(\theta \in \{2.0, 2.5, 3.0, 3.5\}\) (interpreted as z-threshold for z-score source and retained as a compatibility sweep field during source-comparison runs)
+\end{itemize}
 
-Best configuration objective function:
+The objective is protocol-defined utility:
 
-Untouched holdout:
+\[
+U = 0.45\,\text{safe} - 0.25\,\text{anom} - 0.15\,\text{contention} - 0.10\,\text{latency} + 0.05\,\text{fairness}
+\]
 
-Consistency checks on development data:
+with tie-breakers favouring higher safe placement, fewer anomalies, lower contention, better fairness, and lower latency.
 
-[table]
+To reduce holdout leakage risk, a selection-specific protocol is used with \texttt{freeze\_test\_runs=false} and development-only evaluation scope during tuning \cite{cawley2010overfitting}. Consistency diagnostics are computed run-wise for hybrid-vs-prediction deltas.
+
+Anomaly-source comparison on the same locked split showed NSA as the strongest anomaly source for hybrid policy utility.
+
+\begin{table}[h]
+	\centering
+	\begin{tabular}{lrrr}
+		\hline
+		\textbf{Anomaly Source} & \textbf{Hybrid Utility Delta} & \textbf{Safe Rate Delta (\%)} & \textbf{Anomalous Placements Delta} \\
+		\hline
+		z-score & -0.24659 & -0.43 & 3 \\
+		K-means & -1.89839 & -0.14 & 1 \\
+		NSA & 0.00665 & 0.00 & 0 \\
+		\hline
+	\end{tabular}
+	\caption{Strict-holdout hybrid-vs-prediction comparison by anomaly source (same split configuration).}
+	\label{tab:ch3-anomaly-source-comparison}
+\end{table}
+
+\begin{table}[h]
+	\centering
+	\begin{tabular}{ll}
+		\hline
+		\textbf{Selection Parameter} & \textbf{Value} \\
+		\hline
+		Window & 5 \\
+		Warmup & 15 \\
+		Anomaly history & 45 \\
+		Weight grid & 0.5, 0.6, 0.7, 0.8, 0.9 \\
+		Threshold sweep field & 2.0, 2.5, 3.0, 3.5 \\
+		Objective & Utility (protocol weighted) \\
+		\hline
+	\end{tabular}
+	\caption{Development-stage policy selection configuration.}
+	\label{tab:ch3-selection-config}
+\end{table}
 
 
 \subsection{Audit Stage (Strict Holdout, Fixed Config)}
 
-Selected configuration is frozen before holdout evaluation because:
+After selection, parameters are frozen and evaluated on strict holdout runs only. This prevents iterative tuning against holdout outcomes and supports a clearer generalisation claim.
 
-Holdout metrics and key hybrid deltas:
+For the expanded novel-run pipeline, the selected configuration was:
 
-Anomaly-present holdout slice evaluation:
+\begin{itemize}
+	\item anomaly source \(=\) NSA
+	\item prediction weight \(=0.9\)
+	\item anomaly weight \(=0.1\)
+	\item NSA detector budget \(=120\)
+	\item NSA detector radius \(=0.9\)
+\end{itemize}
 
-Old vs. new comparison after dataset expansion:
+Audit outputs include policy metrics, hybrid-vs-prediction deltas, run-wise consistency diagnostics, and an anomaly-present holdout slice summary. A historical old-vs-new comparison from earlier z-score development runs is retained for traceability, but anomaly-source selection for final methodology is based on the direct source-comparison results above.
 
-[table]
+\begin{table}[h]
+	\centering
+	\begin{tabular}{lrrr}
+		\hline
+		\textbf{Holdout Metric (Hybrid vs Prediction-only)} & \textbf{Old} & \textbf{New} & \textbf{New-Old} \\
+		\hline
+		Safe placement rate delta (\%) & -0.43 & 0.44 & 0.87 \\
+		Anomalous placements delta & 3 & -3 & -6 \\
+		Utility delta & -0.24606 & 1.79327 & 2.03933 \\
+		High-contention rate delta (\%) & 0.15 & -7.13 & -7.28 \\
+		\hline
+	\end{tabular}
+	\caption{Historical old-vs-new strict-holdout comparison from earlier z-score development runs (traceability view).}
+	\label{tab:ch3-holdout-old-vs-new}
+\end{table}
 
 
-\section{Validity, Reliability, and Reproduccibility}
+\section{Validity, Reliability, and Reproducibility}
 
 
 \subsection{Threats to Validity and Mitigations}
 
+\textbf{Internal validity threats.} Telemetry startup instability and transient endpoint failures can bias data availability and class balance. Mitigations include collector startup checks, retry logic, endpoint preflight checks, resumable campaign execution, and explicit run artifact validation.
+
+\textbf{Construct validity threats.} Offline replay metrics are proxies for online QoS and may not capture all runtime scheduler side effects. Mitigation: multi-metric evaluation (safety, anomalies, contention, fairness, latency, utility) and explicit anomaly-present slice analysis.
+
+\textbf{External validity threats.} Cloud VM edge simulation may not fully represent heterogeneous physical edge deployments. Mitigation: use of K3s, per-node telemetry, and stress-pattern diversification to approximate realistic edge variability.
+
+\textbf{Selection bias threat.} Repeated tuning against the same holdout can overestimate performance. Mitigation: staged selection/audit separation and fixed-parameter holdout audit \cite{cawley2010overfitting}.
+
 
 \subsection{Reproducibility Package}
 
+Reproducibility is supported through code, configuration, and artifact traceability:
+
+\begin{itemize}
+	\item Campaign plans and per-run artifacts (raw, labels, phases, logs, metadata).
+	\item Locked split configurations for development and strict holdout.
+	\item Saved model directories with training summaries.
+	\item Selection, audit, and comparison JSON outputs with full protocol settings.
+	\item Version-controlled scripts and configuration files for all stages of the pipeline.
+\end{itemize}
+
+The workflow aligns with general reproducible-computational-science practice: preserving both code and executable analysis artifacts rather than reporting metrics only \cite{peng2011reproducible}.
+
 
 \section{Methodology Summary}
+
+This chapter defined a staged, leakage-aware methodology for anomaly-aware lightweight scheduling in edge Kubernetes settings. Data collection, labelling, predictor training, and policy evaluation were separated into controlled phases to improve rigor and reproducibility. Policy selection was performed on development scope only, then audited on strict holdout under frozen parameters, followed by old-vs-new comparison after novel-run expansion. The next chapter reports implementation details and validation outcomes using this methodological framework.

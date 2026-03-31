@@ -1,0 +1,21 @@
+{
+  "best_node": "k3s-worker-3",
+  "ranking": [
+    {
+      "node": "k3s-worker-3",
+      "total_score": 0.3358,
+      "predicted_load": 0.3655,
+      "anomaly_risk": 0.0689
+    },
+    {
+      "node": "k3s-worker-2",
+      "total_score": 0.3809,
+      "predicted_load": 0.412,
+      "anomaly_risk": 0.1009
+    }
+  ],
+  "weights": {
+    "prediction": 0.9,
+    "anomaly": 0.1
+  }
+}

@@ -35,6 +35,10 @@ class AnomalyOnlyScheduler(HybridScheduler):
         window_size: int = 10,
         anomaly_history: int = 30,
         anomaly_z_threshold: float = 2.5,
+        anomaly_source: str = "zscore",
+        nsa_num_detectors: int = 120,
+        nsa_radius: float = 0.9,
+        kmeans_threshold_std: float = 2.0,
     ):
         super().__init__(
             model_dir=model_dir,
@@ -42,6 +46,10 @@ class AnomalyOnlyScheduler(HybridScheduler):
             window_size=window_size,
             anomaly_history=anomaly_history,
             anomaly_z_threshold=anomaly_z_threshold,
+            anomaly_source=anomaly_source,
+            nsa_num_detectors=nsa_num_detectors,
+            nsa_radius=nsa_radius,
+            kmeans_threshold_std=kmeans_threshold_std,
             weight_prediction=0.0,
             weight_anomaly=1.0,
         )
@@ -428,6 +436,10 @@ def evaluate_split(
     z_threshold: float,
     hybrid_pred_weight: float,
     protocol: Optional[Dict] = None,
+    anomaly_source: str = "zscore",
+    nsa_num_detectors: int = 120,
+    nsa_radius: float = 0.9,
+    kmeans_threshold_std: float = 2.0,
 ) -> Dict:
     protocol = protocol or load_protocol(None)
 
@@ -455,6 +467,10 @@ def evaluate_split(
                 window_size=window,
                 anomaly_history=anomaly_history,
                 anomaly_z_threshold=z_threshold,
+                anomaly_source=anomaly_source,
+                nsa_num_detectors=nsa_num_detectors,
+                nsa_radius=nsa_radius,
+                kmeans_threshold_std=kmeans_threshold_std,
             ),
             "hybrid": HybridScheduler(
                 model_dir=model_dir,
@@ -462,6 +478,10 @@ def evaluate_split(
                 window_size=window,
                 anomaly_history=anomaly_history,
                 anomaly_z_threshold=z_threshold,
+                anomaly_source=anomaly_source,
+                nsa_num_detectors=nsa_num_detectors,
+                nsa_radius=nsa_radius,
+                kmeans_threshold_std=kmeans_threshold_std,
                 weight_prediction=hybrid_pred_weight,
                 weight_anomaly=1.0 - hybrid_pred_weight,
                 adaptive_weighting=bool(sched_cfg.get("adaptive_weighting", False)),
@@ -615,6 +635,10 @@ def evaluate_runwise_hybrid_consistency(
     z_threshold: float,
     hybrid_pred_weight: float,
     protocol: Dict,
+    anomaly_source: str = "zscore",
+    nsa_num_detectors: int = 120,
+    nsa_radius: float = 0.9,
+    kmeans_threshold_std: float = 2.0,
 ) -> Dict:
     rows = []
     for run_id in run_ids:
@@ -627,6 +651,10 @@ def evaluate_runwise_hybrid_consistency(
             anomaly_history=anomaly_history,
             z_threshold=z_threshold,
             hybrid_pred_weight=hybrid_pred_weight,
+            anomaly_source=anomaly_source,
+            nsa_num_detectors=nsa_num_detectors,
+            nsa_radius=nsa_radius,
+            kmeans_threshold_std=kmeans_threshold_std,
             protocol=protocol,
         )
         d = r["comparisons"]["hybrid_vs_prediction_only"]
@@ -678,6 +706,10 @@ def main() -> None:
     parser.add_argument("--window", type=int, default=None)
     parser.add_argument("--warmup", type=int, default=15)
     parser.add_argument("--anomaly-history", type=int, default=45)
+    parser.add_argument("--anomaly-source", choices=["zscore", "nsa", "kmeans"], default="zscore")
+    parser.add_argument("--nsa-num-detectors", type=int, default=120)
+    parser.add_argument("--nsa-radius", type=float, default=0.9)
+    parser.add_argument("--kmeans-threshold-std", type=float, default=2.0)
     parser.add_argument("--weight-grid", default="0.5,0.6,0.7,0.8,0.9")
     parser.add_argument("--z-grid", default="2.0,2.5,3.0,3.5")
     args = parser.parse_args()
@@ -715,6 +747,7 @@ def main() -> None:
     print(f"Validation runs ({len(validation_runs)}): {validation_runs}")
     print(f"Test runs ({len(test_runs)}): {test_runs}")
     print(f"Using window size: {window_size}")
+    print(f"Using anomaly source: {args.anomaly_source}")
     print(f"Grid size: {len(weight_grid)} weights x {len(z_grid)} thresholds")
 
     grid_results: List[Dict] = []
@@ -730,6 +763,10 @@ def main() -> None:
                 anomaly_history=args.anomaly_history,
                 z_threshold=z_threshold,
                 hybrid_pred_weight=pred_weight,
+                anomaly_source=args.anomaly_source,
+                nsa_num_detectors=args.nsa_num_detectors,
+                nsa_radius=args.nsa_radius,
+                kmeans_threshold_std=args.kmeans_threshold_std,
                 protocol=protocol,
             )
             grid_results.append(
@@ -759,6 +796,10 @@ def main() -> None:
         anomaly_history=args.anomaly_history,
         z_threshold=float(best["z_threshold"]),
         hybrid_pred_weight=float(best["pred_weight"]),
+        anomaly_source=args.anomaly_source,
+        nsa_num_detectors=args.nsa_num_detectors,
+        nsa_radius=args.nsa_radius,
+        kmeans_threshold_std=args.kmeans_threshold_std,
         protocol=protocol,
     )
 
@@ -771,6 +812,10 @@ def main() -> None:
         anomaly_history=args.anomaly_history,
         z_threshold=float(best["z_threshold"]),
         hybrid_pred_weight=float(best["pred_weight"]),
+        anomaly_source=args.anomaly_source,
+        nsa_num_detectors=args.nsa_num_detectors,
+        nsa_radius=args.nsa_radius,
+        kmeans_threshold_std=args.kmeans_threshold_std,
         protocol=protocol,
     )
     consistency_test = evaluate_runwise_hybrid_consistency(
@@ -782,6 +827,10 @@ def main() -> None:
         anomaly_history=args.anomaly_history,
         z_threshold=float(best["z_threshold"]),
         hybrid_pred_weight=float(best["pred_weight"]),
+        anomaly_source=args.anomaly_source,
+        nsa_num_detectors=args.nsa_num_detectors,
+        nsa_radius=args.nsa_radius,
+        kmeans_threshold_std=args.kmeans_threshold_std,
         protocol=protocol,
     )
 
@@ -798,6 +847,10 @@ def main() -> None:
             "window": window_size,
             "warmup": args.warmup,
             "anomaly_history": args.anomaly_history,
+            "anomaly_source": args.anomaly_source,
+            "nsa_num_detectors": args.nsa_num_detectors,
+            "nsa_radius": args.nsa_radius,
+            "kmeans_threshold_std": args.kmeans_threshold_std,
             "protocol_path": args.protocol,
             "validation_runs": validation_runs,
             "test_runs": test_runs,

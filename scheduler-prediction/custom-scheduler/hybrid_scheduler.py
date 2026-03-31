@@ -62,6 +62,193 @@ class NodeAnomalyMonitor:
         return round(risk, 4)
 
 
+class KMeansAnomalyMonitor:
+    """Lightweight 1D k-means anomaly monitor across resource features.
+
+    For each feature, two centroids are fit from recent history and a per-feature
+    threshold is estimated as mean + n*std of nearest-centroid distances.
+    """
+
+    def __init__(self, history_size: int = 30, k: int = 2, threshold_std: float = 2.0):
+        self.history_size = history_size
+        self.k = max(2, int(k))
+        self.threshold_std = float(threshold_std)
+        self.history: deque = deque(maxlen=history_size)
+        self._centers: Dict[str, np.ndarray] = {}
+        self._thresholds: Dict[str, float] = {}
+        self._ready = False
+
+    def update(self, observation: Dict[str, float]) -> None:
+        self.history.append([observation[f] for f in ANOMALY_FEATURES])
+        if len(self.history) >= max(10, self.history_size // 2) and not self._ready:
+            self._fit()
+
+    def ready(self) -> bool:
+        return self._ready
+
+    def _fit_1d_kmeans(self, values: np.ndarray) -> np.ndarray:
+        lo = float(values.min())
+        hi = float(values.max())
+        if abs(hi - lo) < 1e-9:
+            return np.array([lo, hi], dtype=float)
+
+        centers = np.array([lo, hi], dtype=float)
+        for _ in range(20):
+            d0 = np.abs(values - centers[0])
+            d1 = np.abs(values - centers[1])
+            assign = d0 <= d1
+            if assign.all() or (~assign).all():
+                break
+            c0 = float(values[assign].mean())
+            c1 = float(values[~assign].mean())
+            new_centers = np.array([c0, c1], dtype=float)
+            if np.allclose(new_centers, centers, atol=1e-6):
+                centers = new_centers
+                break
+            centers = new_centers
+
+        centers.sort()
+        return centers
+
+    def _fit(self) -> None:
+        arr = np.array(self.history, dtype=float)
+        centers: Dict[str, np.ndarray] = {}
+        thresholds: Dict[str, float] = {}
+
+        for idx, feat in enumerate(ANOMALY_FEATURES):
+            vals = arr[:, idx]
+            c = self._fit_1d_kmeans(vals)
+            dists = np.minimum(np.abs(vals - c[0]), np.abs(vals - c[1]))
+            thr = float(dists.mean() + self.threshold_std * dists.std())
+            if thr < 1e-6:
+                thr = 1e-6
+            centers[feat] = c
+            thresholds[feat] = thr
+
+        self._centers = centers
+        self._thresholds = thresholds
+        self._ready = True
+
+    def risk(self, observation: Dict[str, float]) -> float:
+        if not self.ready():
+            return 0.0
+
+        feature_risks: List[float] = []
+        for feat in ANOMALY_FEATURES:
+            x = float(observation[feat])
+            c = self._centers[feat]
+            thr = self._thresholds[feat]
+            d = min(abs(x - float(c[0])), abs(x - float(c[1])))
+            ratio = d / max(thr, 1e-6)
+            r = 1.0 / (1.0 + math.exp(-4.0 * (ratio - 1.0)))
+            feature_risks.append(float(r))
+
+        return round(float(max(feature_risks)), 4)
+
+
+class NSAAnomalyMonitor:
+    """Lightweight NSA-inspired detector using recent history as self space."""
+
+    def __init__(
+        self,
+        history_size: int = 30,
+        num_detectors: int = 120,
+        radius: float = 0.9,
+        random_seed: int = 0,
+    ):
+        self.history_size = history_size
+        self.num_detectors = max(20, int(num_detectors))
+        self.radius = float(radius)
+        self.rng = np.random.default_rng(int(random_seed))
+        self.history: deque = deque(maxlen=history_size)
+        self._self_mean: Optional[np.ndarray] = None
+        self._self_std: Optional[np.ndarray] = None
+        self._detectors: Optional[np.ndarray] = None
+
+    def update(self, observation: Dict[str, float]) -> None:
+        self.history.append([observation[f] for f in ANOMALY_FEATURES])
+        if len(self.history) >= max(10, self.history_size // 2) and self._detectors is None:
+            self._fit()
+
+    def ready(self) -> bool:
+        return self._detectors is not None
+
+    def _normalise(self, arr: np.ndarray) -> np.ndarray:
+        if self._self_mean is None or self._self_std is None:
+            return arr
+        return (arr - self._self_mean) / self._self_std
+
+    def _fit(self) -> None:
+        self_arr = np.array(self.history, dtype=float)
+        self_mean = self_arr.mean(axis=0)
+        self_std = self_arr.std(axis=0)
+        self_std = np.where(self_std < 1e-6, 1.0, self_std)
+
+        self._self_mean = self_mean
+        self._self_std = self_std
+
+        self_norm = self._normalise(self_arr)
+        mins = self_norm.min(axis=0) - 1.0
+        maxs = self_norm.max(axis=0) + 1.0
+
+        detectors: List[np.ndarray] = []
+        tries = 0
+        max_tries = self.num_detectors * 200
+
+        while len(detectors) < self.num_detectors and tries < max_tries:
+            tries += 1
+            cand = self.rng.uniform(mins, maxs)
+            d_self = np.linalg.norm(self_norm - cand, axis=1)
+            if np.any(d_self < self.radius):
+                continue
+            detectors.append(cand)
+
+        if not detectors:
+            # Fallback keeps system running even with highly compact self space.
+            detectors.append(self.rng.uniform(mins, maxs))
+
+        self._detectors = np.array(detectors, dtype=float)
+
+    def risk(self, observation: Dict[str, float]) -> float:
+        if not self.ready() or self._detectors is None:
+            return 0.0
+
+        x = np.array([observation[f] for f in ANOMALY_FEATURES], dtype=float)
+        x = self._normalise(x)
+        d = np.linalg.norm(self._detectors - x, axis=1)
+        min_d = float(d.min())
+        # Clip exponent input to avoid overflow for very large detector distances.
+        expo = max(-60.0, min(60.0, 5.0 * (min_d - self.radius)))
+        r = 1.0 / (1.0 + math.exp(expo))
+        return round(float(r), 4)
+
+
+def build_anomaly_monitor(
+    source: str,
+    history_size: int,
+    z_threshold: float,
+    nsa_num_detectors: int,
+    nsa_radius: float,
+    kmeans_threshold_std: float,
+) -> object:
+    source_norm = (source or "zscore").strip().lower()
+    if source_norm == "zscore":
+        return NodeAnomalyMonitor(history_size=history_size, z_threshold=z_threshold)
+    if source_norm == "nsa":
+        return NSAAnomalyMonitor(
+            history_size=history_size,
+            num_detectors=nsa_num_detectors,
+            radius=nsa_radius,
+        )
+    if source_norm == "kmeans":
+        return KMeansAnomalyMonitor(
+            history_size=history_size,
+            k=2,
+            threshold_std=kmeans_threshold_std,
+        )
+    raise ValueError(f"Unsupported anomaly source: {source}")
+
+
 class HybridScheduler:
     """Node ranking engine that combines prediction and anomaly awareness."""
 
@@ -72,6 +259,10 @@ class HybridScheduler:
         window_size: int = 10,
         anomaly_history: int = 30,
         anomaly_z_threshold: float = 2.5,
+        anomaly_source: str = "zscore",
+        nsa_num_detectors: int = 120,
+        nsa_radius: float = 0.9,
+        kmeans_threshold_std: float = 2.0,
         weight_prediction: float = 0.6,
         weight_anomaly: float = 0.4,
         adaptive_weighting: bool = False,
@@ -86,6 +277,7 @@ class HybridScheduler:
 
         self.weight_prediction = weight_prediction
         self.weight_anomaly = weight_anomaly
+        self.anomaly_source = anomaly_source
         self.adaptive_weighting = adaptive_weighting
         self.adaptive_risk_low = adaptive_risk_low
         self.adaptive_risk_high = adaptive_risk_high
@@ -101,9 +293,13 @@ class HybridScheduler:
 
         for node in nodes:
             self.predictor.add_node(node)
-            self.monitors[node] = NodeAnomalyMonitor(
+            self.monitors[node] = build_anomaly_monitor(
+                source=anomaly_source,
                 history_size=anomaly_history,
                 z_threshold=anomaly_z_threshold,
+                nsa_num_detectors=nsa_num_detectors,
+                nsa_radius=nsa_radius,
+                kmeans_threshold_std=kmeans_threshold_std,
             )
 
     def _effective_prediction_weight(self, anomaly_risk: float) -> float:
