@@ -20,12 +20,16 @@ else
   source "${ENV_FILE}"
 fi
 
-MODEL_DIR="${MODEL_DIR:-scheduler-prediction/prediction/models/phase4_weighted_calibrated}"
+MODEL_DIR="${MODEL_DIR:-scheduler-prediction/prediction/models/phase4_weighted_calibrated_expanded_novel_20_safe}"
 WINDOW="${WINDOW:-5}"
 PRED_WEIGHT="${PRED_WEIGHT:-0.9}"
 ANOMALY_WEIGHT="${ANOMALY_WEIGHT:-0.1}"
 ANOMALY_HISTORY="${ANOMALY_HISTORY:-45}"
-Z_THRESHOLD="${Z_THRESHOLD:-3.5}"
+ANOMALY_SOURCE="${ANOMALY_SOURCE:-nsa}"
+NSA_NUM_DETECTORS="${NSA_NUM_DETECTORS:-120}"
+NSA_RADIUS="${NSA_RADIUS:-0.9}"
+KMEANS_THRESHOLD_STD="${KMEANS_THRESHOLD_STD:-2.0}"
+Z_THRESHOLD="${Z_THRESHOLD:-2.5}"
 VENV_PATH="${VENV_PATH:-.venv}"
 
 RESULT_DIR="${PROJECT_ROOT}/scheduler-prediction/online/results/${RUN_TAG}"
@@ -70,6 +74,10 @@ python3 "${PROJECT_ROOT}/scheduler-prediction/custom-scheduler/rank_live.py" \
   --pred-weight "${PRED_WEIGHT}" \
   --anomaly-weight "${ANOMALY_WEIGHT}" \
   --anomaly-history "${ANOMALY_HISTORY}" \
+  --anomaly-source "${ANOMALY_SOURCE}" \
+  --nsa-num-detectors "${NSA_NUM_DETECTORS}" \
+  --nsa-radius "${NSA_RADIUS}" \
+  --kmeans-threshold-std "${KMEANS_THRESHOLD_STD}" \
   --z-threshold "${Z_THRESHOLD}" \
   --output "${RANK_OUT}" | tee "${LOG_DIR}/rank_live.log"
 

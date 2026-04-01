@@ -1,0 +1,11 @@
+run_tag=stage_b_full_components_smoke
+namespace=default
+default_scheduler_name=default-scheduler
+custom_scheduler_name=custom-rank-scheduler
+control_node=k3s-control
+zone=europe-west2-c
+runs_per_phase=5
+stress_node=k3s-worker-3
+contention_rel_cpu_threshold=1.1
+anomaly_rel_cpu_threshold=1.25
+completed_at=2026-04-01T14:05:10Z

@@ -31,6 +31,36 @@ It keeps online operations separate from offline model development and report as
 
    `bash scheduler-prediction/online/scripts/run_online_campaign.sh scheduler-prediction/online/config/online_test.env`
 
+## Stage B authoritative A/B (default vs custom scheduler)
+
+1. Deploy custom scheduler profile:
+
+   `bash scheduler-prediction/online/scripts/deploy_custom_rank_scheduler.sh scheduler-prediction/online/config/online_test.env`
+
+2. Run matched-arm experiment:
+
+   `bash scheduler-prediction/online/scripts/run_stage_b_matched_arms.sh scheduler-prediction/online/config/online_test.env`
+
+3. Review outputs:
+
+   - `scheduler-prediction/online/results/<tag>/baseline_arm_scheduling.csv`
+   - `scheduler-prediction/online/results/<tag>/custom_arm_scheduling.csv`
+   - `scheduler-prediction/online/results/<tag>/stage_b_summary.json`
+
+Stage B now reports full locked utility components in `stage_b_summary.json`:
+
+- `safe_placement_rate`
+- `anomalous_rate`
+- `high_contention_decision_rate`
+- `avg_decision_latency_ms` (derived from scheduling latency)
+- `placement_fairness_percent`
+- per-arm `utility_score` and custom-minus-baseline `utility_delta`
+
+Related env knobs in `online_test.env`:
+
+- `STAGE_B_CONTENTION_REL_CPU_THRESHOLD`
+- `STAGE_B_ANOMALY_REL_CPU_THRESHOLD`
+
 ## Cluster machine setup checklist
 
 Run these setup actions on cluster machines before online tests:
@@ -63,3 +93,6 @@ Run these setup actions on cluster machines before online tests:
 - These scripts do not modify production scheduler settings.
 - They prepare and validate the environment so you can safely run online comparisons against the default scheduler.
 - Keep each test run under a unique tag so artifacts are isolated under `results/<tag>/`.
+- The custom scheduler in this repository is a ranking engine (`custom-scheduler/rank_live.py`), not a deployed Kubernetes scheduler plugin.
+- To enforce its selected node in-cluster, consume `best_node` from ranking output and submit workloads with `spec.nodeName` (or strong node affinity) targeting that node.
+- Stage B scripts use explicit `spec.schedulerName` for both arms to preserve scheduler authority and causal attribution.

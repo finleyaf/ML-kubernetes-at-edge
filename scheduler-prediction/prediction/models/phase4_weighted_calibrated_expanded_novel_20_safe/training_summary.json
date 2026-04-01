@@ -19,7 +19,7 @@
       "samples_test": 1139,
       "samples_fit": 3639,
       "samples_calibration": 910,
-      "train_time_s": 0.003,
+      "train_time_s": 0.0066,
       "inference_time_ms": 0.0001,
       "mae_per_feature": {
         "cpu_user": 0.1108,
@@ -44,7 +44,7 @@
       "samples_test": 1139,
       "samples_fit": 3638,
       "samples_calibration": 910,
-      "train_time_s": 0.0024,
+      "train_time_s": 0.001,
       "inference_time_ms": 0.0001,
       "mae_per_feature": {
         "cpu_user": 0.0947,

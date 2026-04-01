@@ -11,6 +11,18 @@ parser.add_argument("--output", required=True, help="Path to append results CSV"
 parser.add_argument("--timeout", type=int, default=120, help="Max seconds to wait for pod completion")
 parser.add_argument("--control-node", required=True, help="GCE control node name (e.g. k3s-control)")
 parser.add_argument("--zone", required=True, help="GCE zone (e.g. europe-west2-c)")
+parser.add_argument(
+    "--contention-relative-cpu-threshold",
+    type=float,
+    default=1.1,
+    help="Relative CPU threshold above which a decision is marked high contention",
+)
+parser.add_argument(
+    "--anomaly-relative-cpu-threshold",
+    type=float,
+    default=1.25,
+    help="Relative CPU threshold above which a placement is marked anomalous",
+)
 args = parser.parse_args()
 
 
@@ -29,6 +41,47 @@ def get_pod_events(pod_name):
         f"kubectl get events --field-selector involvedObject.name={pod_name} -o json"
     )
     return data.get("items", [])
+
+
+def parse_cpu_cores(raw):
+    s = str(raw).strip().lower()
+    if not s:
+        return None
+    if s.endswith("m"):
+        return float(s[:-1]) / 1000.0
+    return float(s)
+
+
+def parse_cpu_percent(raw):
+    s = str(raw).strip().lower()
+    if not s:
+        return None
+    if s.endswith("%"):
+        return float(s[:-1])
+    return float(s)
+
+
+def get_node_cpu_snapshot():
+    """Return node CPU usage snapshot from metrics-server via kubectl top nodes."""
+    remote_cmd = (
+        f'gcloud compute ssh {args.control_node} --zone={args.zone} '
+        '--command="kubectl top nodes --no-headers"'
+    )
+    result = subprocess.run(remote_cmd, shell=True, capture_output=True, text=True)
+    if result.returncode != 0:
+        return {}
+
+    rows = {}
+    for line in result.stdout.splitlines():
+        parts = line.split()
+        if len(parts) < 3:
+            continue
+        node = parts[0]
+        rows[node] = {
+            "cpu_cores": parse_cpu_cores(parts[1]),
+            "cpu_percent": parse_cpu_percent(parts[2]),
+        }
+    return rows
 
 
 def parse_timestamp(ts):
@@ -105,6 +158,27 @@ def collect_pod_metrics(pod_name, timeout):
     labels = pod.get("metadata", {}).get("labels", {})
     workload_type = labels.get("workload-type", "unknown")
 
+    snapshot = get_node_cpu_snapshot()
+    workers = [
+        n for n in snapshot.keys()
+        if "control" not in str(n).lower() and "master" not in str(n).lower()
+    ]
+    worker_cpu_pct = [snapshot[n]["cpu_percent"] for n in workers if snapshot[n]["cpu_percent"] is not None]
+
+    chosen_observed_cpu = None
+    chosen_relative_cpu = None
+    high_contention = None
+    chosen_label = None
+
+    if node and node in snapshot:
+        chosen_observed_cpu = snapshot[node]["cpu_percent"]
+    if chosen_observed_cpu is not None and worker_cpu_pct:
+        avg_cpu = sum(worker_cpu_pct) / max(1, len(worker_cpu_pct))
+        if avg_cpu > 0:
+            chosen_relative_cpu = round(chosen_observed_cpu / avg_cpu, 4)
+            high_contention = 1 if chosen_relative_cpu >= args.contention_relative_cpu_threshold else 0
+            chosen_label = 1 if chosen_relative_cpu >= args.anomaly_relative_cpu_threshold else 0
+
     return {
         "pod_name": pod_name,
         "workload_type": workload_type,
@@ -114,7 +188,11 @@ def collect_pod_metrics(pod_name, timeout):
         "total_time_s": total_time,
         "creation_time": creation_time,
         "scheduled_time": scheduled_time,
-        "started_time": started_time
+        "started_time": started_time,
+        "chosen_observed_cpu": chosen_observed_cpu,
+        "chosen_relative_cpu": chosen_relative_cpu,
+        "high_contention": high_contention,
+        "chosen_label": chosen_label,
     }
 
 

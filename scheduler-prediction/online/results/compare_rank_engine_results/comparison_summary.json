@@ -1,0 +1,42 @@
+{
+  "inputs": {
+    "smoke_ranking": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/scheduler-prediction/online/results/compare_rank_engine_smoke/latest_ranking.json",
+    "baseline_analysis": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/scheduler-prediction/online/results/compare_rank_engine_baseline/baseline_analysis.json",
+    "campaign_plan": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/campaign_plan_compare_rank_engine_campaign.json"
+  },
+  "rank_engine": {
+    "best_node": "k3s-worker-2",
+    "anomaly_source": "nsa",
+    "weights": {
+      "prediction": 0.9,
+      "anomaly": 0.1
+    }
+  },
+  "baseline_default_scheduler": {
+    "normal_avg_startup_time_s": 3.5333,
+    "stress_avg_startup_time_s": 6.2,
+    "startup_time_increase_s": 2.6667,
+    "stress_node_placement_pct": 26.7,
+    "normal_node_placements": {
+      "k3s-worker-3": 10,
+      "k3s-worker-2": 5
+    },
+    "stress_node_placements": {
+      "k3s-worker-3": 11,
+      "k3s-worker-2": 4
+    }
+  },
+  "campaign_rank_engine_data": {
+    "planned_runs": 6,
+    "evaluated_runs": 6,
+    "total_rows": 3231,
+    "total_anomalous_rows": 478,
+    "overall_anomaly_rate_pct": 14.794,
+    "stress_runs_mean_anomaly_rate_pct": 17.984,
+    "control_runs_mean_anomaly_rate_pct": 0.0,
+    "recommended_node_share_pct_mean": 33.333,
+    "recommended_node_anomaly_rate_pct_mean": 13.006,
+    "other_nodes_anomaly_rate_pct_mean": 11.481
+  },
+  "interpretation_note": "This compares default scheduler baseline outcomes against rank-engine campaign telemetry statistics. It is not a strict A/B of node-placement policy because rank output was not wired as kube scheduler plugin/binder in this run."
+}

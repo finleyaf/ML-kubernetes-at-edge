@@ -36,10 +36,11 @@ python custom-scheduler/rank_live.py \
   --input ../anomaly-detection/online-telemetry/dataset/dataset.csv \
   --model-dir prediction/models \
   --window 10 \
+  --anomaly-source nsa \
   --pred-weight 0.9 \
   --anomaly-weight 0.1 \
   --anomaly-history 45 \
-  --z-threshold 3.5 \
+  --z-threshold 2.5 \
   --output custom-scheduler/results/latest_ranking.json
 ```
 

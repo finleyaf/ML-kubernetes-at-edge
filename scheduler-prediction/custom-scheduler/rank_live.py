@@ -15,7 +15,11 @@ def main() -> None:
     parser.add_argument("--pred-weight", type=float, default=0.9, help="Weight for predicted load")
     parser.add_argument("--anomaly-weight", type=float, default=0.1, help="Weight for anomaly risk")
     parser.add_argument("--anomaly-history", type=int, default=45, help="Anomaly monitor history length")
-    parser.add_argument("--z-threshold", type=float, default=3.5, help="Anomaly z-score threshold")
+    parser.add_argument("--anomaly-source", choices=["zscore", "nsa", "kmeans"], default="nsa", help="Anomaly detector source")
+    parser.add_argument("--z-threshold", type=float, default=2.5, help="Anomaly z-score threshold")
+    parser.add_argument("--nsa-num-detectors", type=int, default=120, help="NSA detector count")
+    parser.add_argument("--nsa-radius", type=float, default=0.9, help="NSA detector radius")
+    parser.add_argument("--kmeans-threshold-std", type=float, default=2.0, help="KMeans distance threshold multiplier")
     parser.add_argument("--output", help="Optional path to save ranking JSON")
     args = parser.parse_args()
 
@@ -33,6 +37,10 @@ def main() -> None:
         window_size=args.window,
         anomaly_history=args.anomaly_history,
         anomaly_z_threshold=args.z_threshold,
+        anomaly_source=args.anomaly_source,
+        nsa_num_detectors=args.nsa_num_detectors,
+        nsa_radius=args.nsa_radius,
+        kmeans_threshold_std=args.kmeans_threshold_std,
         weight_prediction=args.pred_weight,
         weight_anomaly=args.anomaly_weight,
     )
@@ -71,6 +79,7 @@ def main() -> None:
             "prediction": args.pred_weight,
             "anomaly": args.anomaly_weight,
         },
+        "anomaly_source": args.anomaly_source,
     }
 
     print("\n=== Live Node Ranking ===")
