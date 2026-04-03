@@ -1,13 +1,33 @@
 \chapter{Implementation and Validation}
 \label{chapter4}
 
-<Implementation, validation should be described in one or more chapters. See the `Implementation and Validation' criterion in the mark scheme for the sorts of material that may be included here.>
 
-\section{A section}
-\lipsum[8]
+\section{Validity, Reliability, and Reproducibility}
 
-\subsection{A sub-section}
-\lipsum[11]
 
-\section{Another section}
-\lipsum[12]
+\subsection{Threats to Validity and Mitigations}
+
+\textbf{Internal validity threats.} Telemetry startup instability and transient endpoint failures can bias data availability and class balance. Sequential arm execution in the online experiment means cluster state may drift between arms. Mitigations include collector startup checks, retry logic, endpoint preflight checks, controlled inter-pod spacing, and matched workload sequences to minimise ordering effects across arms.
+
+\textbf{Construct validity threats.} The online experiment measures scheduling latency, startup time, and placement quality under controlled stress injection, which are proxies for real edge QoS. Mitigation: multi-metric evaluation (safety, anomalies, contention, fairness, latency, utility) and per-phase and per-workload breakdowns provide diagnostic depth beyond aggregate comparisons.
+
+\textbf{External validity threats.} Cloud VM edge simulation may not fully represent heterogeneous physical edge deployments. The two-worker cluster limits the diversity of placement options available to the scheduler. Mitigation: use of K3s, per-node telemetry, stress-pattern diversification, and multiple trial repetitions to assess consistency.
+
+\textbf{Selection bias threat.} Policy parameters were tuned on offline development runs, which could introduce optimistic bias if the same data informed both selection and evaluation. Mitigation: strict separation of offline selection (development scope) from online evaluation (live cluster with fresh workloads), ensuring no parameter adjustment occurs after the online experiment begins.
+
+
+\subsection{Reproducibility Package}
+
+Reproducibility is supported through code, configuration, and artifact traceability:
+
+\begin{itemize}
+	\item Campaign plans and per-run artifacts (raw telemetry, labels, phases, logs, metadata).
+	\item Locked policy configuration from offline selection (anomaly source, weights, thresholds).
+	\item Saved model directories with training summaries.
+	\item Custom scheduler Kubernetes manifests (\texttt{custom-rank-scheduler.yaml}) and environment configuration.
+	\item Per-trial online experiment artifacts: baseline and custom arm CSVs, summary JSONs, metadata, and logs.
+	\item Aggregated trial summary (\texttt{stage\_b\_trials\_aggregate.json}) with per-trial and cross-trial statistics.
+	\item Version-controlled scripts for all stages of the pipeline, from telemetry collection through online evaluation.
+\end{itemize}
+
+The workflow aligns with general reproducible-computational-science practice: preserving both code and executable analysis artifacts rather than reporting metrics only \cite{peng2011reproducible}.

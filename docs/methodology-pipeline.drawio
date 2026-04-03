@@ -1,0 +1,84 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36" version="29.6.6">
+  <diagram id="prtHgNgQTEPvFCAcTncT" name="Page-1">
+    <mxGraphModel dx="925" dy="577" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="ObUO4F2RnIpObDo4r61U-1" parent="1" style="swimlane;whiteSpace=wrap;html=1;fillColor=#E1D5E7;" value="Staged Methodology Pipeline" vertex="1">
+          <mxGeometry height="420" width="560" x="120" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="ObUO4F2RnIpObDo4r61U-15" edge="1" parent="ObUO4F2RnIpObDo4r61U-1" source="ObUO4F2RnIpObDo4r61U-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="170" y="80" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ObUO4F2RnIpObDo4r61U-2" parent="ObUO4F2RnIpObDo4r61U-1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1D5E7;" value="Run Generation" vertex="1">
+          <mxGeometry height="60" width="90" x="40" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="ObUO4F2RnIpObDo4r61U-16" edge="1" parent="ObUO4F2RnIpObDo4r61U-1" source="ObUO4F2RnIpObDo4r61U-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="ObUO4F2RnIpObDo4r61U-5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ObUO4F2RnIpObDo4r61U-4" parent="ObUO4F2RnIpObDo4r61U-1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1D5E7;" value="Telemetry Capture (Netdata 1s poll)" vertex="1">
+          <mxGeometry height="60" width="89.5" x="170.5" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="ObUO4F2RnIpObDo4r61U-17" edge="1" parent="ObUO4F2RnIpObDo4r61U-1" source="ObUO4F2RnIpObDo4r61U-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="ObUO4F2RnIpObDo4r61U-6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ObUO4F2RnIpObDo4r61U-5" parent="ObUO4F2RnIpObDo4r61U-1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1D5E7;" value="Phase Labelling (per-node)" vertex="1">
+          <mxGeometry height="60" width="90" x="300" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="ObUO4F2RnIpObDo4r61U-21" edge="1" parent="ObUO4F2RnIpObDo4r61U-1" source="ObUO4F2RnIpObDo4r61U-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="ObUO4F2RnIpObDo4r61U-13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ObUO4F2RnIpObDo4r61U-6" parent="ObUO4F2RnIpObDo4r61U-1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1D5E7;" value="Preprocessing &amp;amp; Features" vertex="1">
+          <mxGeometry height="60" width="90" x="430" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="ObUO4F2RnIpObDo4r61U-24" edge="1" parent="ObUO4F2RnIpObDo4r61U-1" source="ObUO4F2RnIpObDo4r61U-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="190" y="220" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ObUO4F2RnIpObDo4r61U-7" parent="ObUO4F2RnIpObDo4r61U-1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;" value="Predictor Training" vertex="1">
+          <mxGeometry height="60" width="89.5" x="60.5" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="ObUO4F2RnIpObDo4r61U-25" edge="1" parent="ObUO4F2RnIpObDo4r61U-1" source="ObUO4F2RnIpObDo4r61U-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="320" y="220" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ObUO4F2RnIpObDo4r61U-8" parent="ObUO4F2RnIpObDo4r61U-1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;" value="Offline Policy Selection" vertex="1">
+          <mxGeometry height="60" width="89" x="191" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="ObUO4F2RnIpObDo4r61U-26" edge="1" parent="ObUO4F2RnIpObDo4r61U-1" source="ObUO4F2RnIpObDo4r61U-9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="ObUO4F2RnIpObDo4r61U-14">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ObUO4F2RnIpObDo4r61U-9" parent="ObUO4F2RnIpObDo4r61U-1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;" value="Lock Configuration (freeze parameters)" vertex="1">
+          <mxGeometry height="60" width="89.5" x="320.5" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="ObUO4F2RnIpObDo4r61U-27" edge="1" parent="ObUO4F2RnIpObDo4r61U-1" source="ObUO4F2RnIpObDo4r61U-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="190" y="349.9999999999999" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ObUO4F2RnIpObDo4r61U-10" parent="ObUO4F2RnIpObDo4r61U-1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#A9C4EB;" value="Deploy Custom Scheduler" vertex="1">
+          <mxGeometry height="60" width="90" x="60" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="ObUO4F2RnIpObDo4r61U-28" edge="1" parent="ObUO4F2RnIpObDo4r61U-1" source="ObUO4F2RnIpObDo4r61U-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="ObUO4F2RnIpObDo4r61U-12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ObUO4F2RnIpObDo4r61U-11" parent="ObUO4F2RnIpObDo4r61U-1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#A9C4EB;" value="Matched-Arm Experiment (n trials)" vertex="1">
+          <mxGeometry height="60" width="89.5" x="190.5" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="ObUO4F2RnIpObDo4r61U-12" parent="ObUO4F2RnIpObDo4r61U-1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#A9C4EB;" value="Aggregate Results (utility delta)" vertex="1">
+          <mxGeometry height="60" width="90" x="320" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="ObUO4F2RnIpObDo4r61U-14" parent="ObUO4F2RnIpObDo4r61U-1" style="swimlane;whiteSpace=wrap;html=1;fillColor=#A9C4EB;" value="Online Evaluation (live k3s cluster)" vertex="1">
+          <mxGeometry height="100" width="460" x="40" y="290" as="geometry" />
+        </mxCell>
+        <mxCell id="ObUO4F2RnIpObDo4r61U-13" parent="ObUO4F2RnIpObDo4r61U-1" style="swimlane;whiteSpace=wrap;html=1;fillColor=#D5E8D4;fillStyle=auto;gradientColor=none;" value="Development Scope (offline)" vertex="1">
+          <mxGeometry height="100" width="460" x="40" y="158" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
