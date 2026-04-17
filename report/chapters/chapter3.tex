@@ -219,22 +219,7 @@ U = 0.45\,\text{safe} - 0.25\,\text{anom} - 0.15\,\text{contention} - 0.10\,\tex
 
 with tie-breakers favouring higher safe placement, fewer anomalies, lower contention, better fairness, and lower latency.
 
-Anomaly-source comparison on the same locked split showed NSA as the strongest anomaly source for hybrid policy utility (Table~\ref{tab:ch3-anomaly-source-comparison}). Only NSA produced a non-negative utility delta against the prediction-only baseline, confirming it as the most compatible anomaly component for the hybrid scoring formulation. This determined the anomaly detection component used in the deployed custom scheduler. The full development-stage selection configuration is summarised in Table~\ref{tab:ch3-selection-config}; the threshold parameter $\theta$ originates from the z-score source where it controls the anomaly-flagging boundary. For NSA and K-means sources, which use distance-based anomaly scoring rather than a z-threshold, $\theta$ has no functional effect and was retained in the sweep grid solely for structural compatibility across source-comparison runs.
-
-\begin{table}[h]
-	\centering
-	\begin{tabular}{lrrr}
-		\hline
-		\textbf{Anomaly Source} & \textbf{Hybrid Utility Delta} & \textbf{Safe Rate Delta (\%)} & \textbf{Anomalous Placements Delta} \\
-		\hline
-		z-score & -0.24659 & -0.43 & 3 \\
-		K-means & -1.89839 & -0.14 & 1 \\
-		NSA & 0.00665 & 0.00 & 0 \\
-		\hline
-	\end{tabular}
-	\caption{Offline hybrid-vs-prediction comparison by anomaly source (development split), used to lock the custom scheduler's anomaly component.}
-	\label{tab:ch3-anomaly-source-comparison}
-\end{table}
+Based on the replication evidence in Chapter~\ref{chapter2}---where NSA achieved near-perfect precision and F1 scores of 0.946--0.980 on real cluster telemetry, substantially outperforming K-means across all configurations---NSA was adopted as the anomaly source for the hybrid scheduler. Offline policy evaluation on the development split confirmed this choice: NSA was the only source to produce a non-negative utility delta against the prediction-only baseline. The full development-stage selection configuration is summarised in Table~\ref{tab:ch3-selection-config}.
 
 \begin{table}[h]
 	\centering

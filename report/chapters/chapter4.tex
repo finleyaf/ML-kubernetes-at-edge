@@ -72,7 +72,7 @@ Three anomaly monitor implementations are provided in \texttt{hybrid\_scheduler.
 	\item \textbf{NSA Monitor.} Estimates self-space from recent history by computing mean and standard deviation per feature. Detectors are randomly sampled in the normalised feature space, rejecting candidates that fall within the self-radius of any historical observation. At inference, risk is $r = 1 / (1 + e^{5(d_{\min} - \rho)})$ where $d_{\min}$ is the Euclidean distance to the nearest detector and $\rho$ is the configured radius. A fallback detector is generated if the self-space is too compact to reject all candidates.
 \end{itemize}
 
-A factory function \texttt{build\_anomaly\_monitor()} instantiates the configured source by name. The NSA monitor was selected for the deployed scheduler based on offline utility comparison (Chapter~\ref{chapter3}, Table~\ref{tab:ch3-anomaly-source-comparison}).
+A factory function \texttt{build\_anomaly\_monitor()} instantiates the configured source by name. The NSA monitor was selected for the deployed scheduler based on the replication evidence in Chapter~\ref{chapter2} and offline utility evaluation (Chapter~\ref{chapter3}).
 
 
 \subsection{Hybrid Scheduler Engine}
@@ -189,7 +189,7 @@ The comparable error across both workers indicates that the training pipeline ge
 
 \subsubsection{Grid Search Outcome}
 
-The grid search over $w_p \in \{0.5, 0.6, 0.7, 0.8, 0.9\}$ and $\theta \in \{2.0, 2.5, 3.0, 3.5\}$ on the 36-run development corpus produced utility scores for each configuration. The selection stage identified the best configuration and locked it without referencing holdout data. The anomaly-source comparison (Table~\ref{tab:ch3-anomaly-source-comparison} in Chapter~\ref{chapter3}) confirmed NSA as the only source producing non-negative utility delta against the prediction-only baseline.
+The grid search over $w_p \in \{0.5, 0.6, 0.7, 0.8, 0.9\}$ and $\theta \in \{2.0, 2.5, 3.0, 3.5\}$ on the 36-run development corpus produced utility scores for each configuration. The selection stage identified the best configuration and locked it without referencing holdout data. NSA was adopted as the anomaly source based on the replication evidence in Chapter~\ref{chapter2}, and offline policy evaluation confirmed it as the only source producing non-negative utility delta against the prediction-only baseline.
 
 \subsubsection{Audit-Stage Consistency Check}
 
