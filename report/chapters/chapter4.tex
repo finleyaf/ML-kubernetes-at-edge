@@ -62,17 +62,13 @@ The weights reflect the relative importance of CPU and memory for scheduling on 
 
 \subsection{Anomaly Monitors}
 
-Three anomaly monitor implementations are provided in \texttt{hybrid\_scheduler.py}, each conforming to the same \texttt{update()}/\texttt{ready()}/\texttt{risk()} interface:
+The anomaly monitor implementation in \texttt{hybrid\_scheduler.py} conforms to an \texttt{update()}/\texttt{ready()}/\texttt{risk()} interface. Based on the replication evidence in Chapter~\ref{chapter2}, which demonstrated NSA's consistently superior detection performance over K-means on real cluster telemetry (F1 0.946--0.980 versus 0.000--0.638), NSA was adopted as the sole anomaly source for the deployed scheduler.
 
 \begin{itemize}
-	\item \textbf{Z-Score Monitor.} Maintains a rolling history of observations. Risk is the logistic mapping of the largest per-feature z-score: $r = 1 / (1 + e^{-(z_{\max} - \theta)})$, where $\theta$ is the configurable z-threshold.
-
-	\item \textbf{K-Means Monitor.} Fits a 1D two-centroid k-means per feature from recent history (20 iterations, convergence check). Per-feature anomaly distance thresholds are set at $\mu_d + n \sigma_d$ of nearest-centroid distances. Risk is the logistic mapping of the ratio of observed distance to threshold.
-
 	\item \textbf{NSA Monitor.} Estimates self-space from recent history by computing mean and standard deviation per feature. Detectors are randomly sampled in the normalised feature space, rejecting candidates that fall within the self-radius of any historical observation. At inference, risk is $r = 1 / (1 + e^{5(d_{\min} - \rho)})$ where $d_{\min}$ is the Euclidean distance to the nearest detector and $\rho$ is the configured radius. A fallback detector is generated if the self-space is too compact to reject all candidates.
 \end{itemize}
 
-A factory function \texttt{build\_anomaly\_monitor()} instantiates the configured source by name. The NSA monitor was selected for the deployed scheduler based on the replication evidence in Chapter~\ref{chapter2} and offline utility evaluation (Chapter~\ref{chapter3}).
+A factory function \texttt{build\_anomaly\_monitor()} instantiates the configured source by name. The codebase also retains z-score and K-means monitor implementations for potential future use, but these were not deployed.
 
 
 \subsection{Hybrid Scheduler Engine}
@@ -88,10 +84,10 @@ The \texttt{HybridScheduler} class orchestrates prediction and anomaly monitorin
 
 \subsection{Offline Policy Evaluation}
 
-The offline policy evaluation (\texttt{offline\_policy\_evaluation.py}) implements the grid search and source comparison described in Chapter~\ref{chapter3}. The implementation enforces strict stage separation:
+The offline policy evaluation (\texttt{offline\_policy\_evaluation.py}) implements the grid search described in Chapter~\ref{chapter3}. The implementation enforces strict stage separation:
 
 \begin{itemize}
-	\item \textbf{Selection stage.} Iterates the Cartesian product of the weight grid and threshold grid. For each configuration, three scheduler instances (prediction-only, anomaly-only, hybrid) replay identical decision sequences on development runs. Utility is computed from the protocol-defined weighted formula. The best configuration is selected by utility score with tie-breakers on safe rate, anomalous count, and latency. Selection never reads or writes holdout metrics.
+	\item \textbf{Selection stage.} Iterates the prediction weight grid. For each configuration, three scheduler instances (prediction-only, anomaly-only, hybrid) replay identical decision sequences on development runs. Utility is computed from the protocol-defined weighted formula. The best configuration is selected by utility score with tie-breakers on safe rate, anomalous count, and latency. Selection never reads or writes holdout metrics.
 	\item \textbf{Audit stage.} Loads the locked configuration from the selection output and evaluates it on the strict holdout runs only. A run-wise consistency check validates that a configurable fraction of individual runs show non-negative hybrid advantage, producing a \texttt{passed: bool} flag.
 \end{itemize}
 
@@ -189,7 +185,7 @@ The comparable error across both workers indicates that the training pipeline ge
 
 \subsubsection{Grid Search Outcome}
 
-The grid search over $w_p \in \{0.5, 0.6, 0.7, 0.8, 0.9\}$ and $\theta \in \{2.0, 2.5, 3.0, 3.5\}$ on the 36-run development corpus produced utility scores for each configuration. The selection stage identified the best configuration and locked it without referencing holdout data. NSA was adopted as the anomaly source based on the replication evidence in Chapter~\ref{chapter2}, and offline policy evaluation confirmed it as the only source producing non-negative utility delta against the prediction-only baseline.
+The grid search over $w_p \in \{0.5, 0.6, 0.7, 0.8, 0.9\}$ on the 36-run development corpus produced utility scores for each configuration. The selection stage identified the best configuration and locked it without referencing holdout data. NSA was adopted as the anomaly source based on the replication evidence in Chapter~\ref{chapter2}, and offline policy evaluation confirmed it as the only source producing non-negative utility delta against the prediction-only baseline.
 
 \subsubsection{Audit-Stage Consistency Check}
 
@@ -236,7 +232,7 @@ Reproducibility is supported through code, configuration, and artifact traceabil
 
 \begin{itemize}
 	\item Campaign plans and per-run artifacts (raw telemetry, labels, phases, logs, metadata).
-	\item Locked policy configuration from offline selection (anomaly source, weights, thresholds).
+	\item Locked policy configuration from offline selection (anomaly source, weights).
 	\item Saved model directories with training summaries.
 	\item Custom scheduler Kubernetes manifests (\texttt{custom-rank-scheduler.yaml}) and environment configuration.
 	\item Per-trial online experiment artifacts: baseline and custom arm CSVs, summary JSONs, metadata, and logs.

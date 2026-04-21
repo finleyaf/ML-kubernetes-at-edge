@@ -38,17 +38,17 @@ The implemented pipeline is:
 	\item \textbf{Telemetry capture.} \texttt{netdata\_collector.py} polls Netdata at one-second intervals from \texttt{system.cpu}, \texttt{system.ram}, \texttt{system.net}, and \texttt{system.load}.
 	\item \textbf{Phase labelling.} Start/end timestamps for each phase are recorded and saved to \texttt{phases.json}; \texttt{label\_data.py} then applies per-node labels to produce \texttt{labelled.csv}.
 	\item \textbf{Predictor training and calibration.} \texttt{train\_predictor.py} trains per-node regressors from sliding windows, performs leakage-safe scaling, and applies linear post-calibration.
-	\item \textbf{Offline policy selection (development only).} \texttt{offline\_policy\_evaluation.py} performs grid search over prediction weight and anomaly threshold using only development-run scope to lock the custom scheduler configuration.
+	\item \textbf{Offline policy selection (development only).} \texttt{offline\_policy\_evaluation.py} performs grid search over prediction weight using only development-run scope to lock the custom scheduler configuration.
 	\item \textbf{Custom scheduler deployment.} The locked configuration is deployed as a second \texttt{kube-scheduler} instance on the K3s cluster via a dedicated \texttt{KubeSchedulerConfiguration} profile.
 	\item \textbf{Online matched-arm evaluation.} \texttt{run\_stage\_b\_matched\_arms.sh} executes matched workload sequences under both the default and custom schedulers, collecting scheduling latency, pod startup time, node placement, and contention metrics for each arm.
 \end{enumerate}
 
-This staged design follows the principle that parameter selection and final evaluation should be separated to avoid optimistic bias---offline selection locks the configuration, and the online experiment provides the authoritative comparison against the default scheduler. Figure~\ref{fig:methodology-pipeline} illustrates this staged pipeline, highlighting the information barrier between offline parameter selection and online evaluation.
+This staged design follows the principle that parameter selection and final evaluation should be separated to avoid optimistic bias. Offline selection locks the configuration, and the online experiment provides the authoritative comparison against the default scheduler. Figure~\ref{fig:methodology-pipeline} illustrates this staged pipeline, highlighting the information barrier between offline parameter selection and online evaluation.
 
 \begin{figure}[htbp]
 	\centering
-	\includegraphics[width=0.95\textwidth]{../docs/methodology-pipeline.png}
-	\caption{Staged methodology pipeline. Data preparation feeds into the offline development scope (blue), where predictor training and policy selection lock the custom scheduler configuration. The online evaluation scope (green) deploys and evaluates the locked scheduler against the default Kubernetes scheduler on a live K3s cluster. No online outcomes influence offline parameter selection.}
+	\includegraphics[width=0.95\textwidth]{./docs/methodology-pipeline.png}
+	\caption{Staged methodology pipeline. Data preparation feeds into the offline development scope (green), where predictor training and policy selection lock the custom scheduler configuration. The online evaluation scope (blue) deploys and evaluates the locked scheduler against the default Kubernetes scheduler on a live K3s cluster. No online outcomes influence offline parameter selection.}
 	\label{fig:methodology-pipeline}
 \end{figure}
 
@@ -81,7 +81,7 @@ Preprocessing choices differ by stage:
 	\item \textbf{Prediction stage:} leakage-safe min-max scaling where scaler fit uses training period only, then applied to full sequence for window construction.
 \end{itemize}
 
-This separation is intentional: detector studies evaluate anomaly separability properties, while predictor training emphasises leakage control and forecast stability. As observed in Chapter~\ref{chapter2}, stronger smoothing can suppress subtle anomaly separability, so smoothing decisions were treated as methodological variables rather than fixed assumptions. Emphasising leakage control and stability ensures that the predictor's performance is robust and generalizable, avoiding overfitting to transient patterns in the training data.
+This separation is intentional: detector studies evaluate anomaly separability properties, while predictor training emphasises leakage control and forecast stability. As observed in Chapter~\ref{chapter2}, stronger smoothing can suppress subtle anomaly separability, so smoothing decisions were treated as methodological variables rather than fixed assumptions.
 
 
 \section{Predictive Modeling Method}
@@ -148,7 +148,7 @@ At each decision step, each node receives:
 
 \begin{itemize}
 	\item \textbf{Predicted load} from the node predictor.
-	\item \textbf{Anomaly risk} from a lightweight detector monitor. Three anomaly sources were evaluated inside the scheduler pipeline (z-score, K-means-inspired monitor, NSA-inspired monitor), and NSA was selected for anomaly-aware policy reporting based on holdout utility and safety consistency.
+	\item \textbf{Anomaly risk} from a lightweight detector monitor.
 \end{itemize}
 
 If the predictor is not yet ready (warm start), a bounded fallback load estimate is used from current CPU, RAM, and NET observations.
@@ -170,7 +170,7 @@ Lower score indicates preferred placement. Figure~\ref{fig:node-scoring} illustr
 
 \begin{figure}[htbp]
 	\centering
-	\includegraphics[width=0.45\textwidth]{../docs/node-scoring.png}
+	\includegraphics[width=0.45\textwidth]{./docs/node-scoring.png}
 	\caption{Per-pod node scoring decision flow. For each candidate node, the Ridge predictor and NSA monitor produce independent signals that are combined into a weighted score. The node with the lowest score is selected for placement.}
 	\label{fig:node-scoring}
 \end{figure}
@@ -195,7 +195,7 @@ The hybrid configuration was selected as the superior internal policy and its pa
 	\item \textbf{Custom scheduler:} a second \texttt{kube-scheduler} instance configured with a dedicated \texttt{KubeSchedulerConfiguration} profile, using the locked hybrid policy parameters. Pods are assigned to this scheduler via \texttt{spec.schedulerName}.
 \end{itemize}
 
-This two-level design---internal offline selection followed by external online comparison---ensures that the custom scheduler's configuration is determined independently of the online evaluation outcomes.
+This two-level design (internal offline selection followed by external online comparison) ensures that the custom scheduler's configuration is determined independently of the online evaluation outcomes.
 
 
 \section{Evaluation Protocol}
@@ -204,11 +204,10 @@ This two-level design---internal offline selection followed by external online c
 \subsection{Offline Policy Selection (Development-Only)}
 \label{sec:offline-selection}
 
-Offline selection uses a grid over prediction weight and threshold parameter on development runs only to lock the custom scheduler configuration before online deployment:
+Offline selection uses a grid over prediction weight on development runs only to lock the custom scheduler configuration before online deployment:
 
 \begin{itemize}
 	\item \(w_p \in \{0.5, 0.6, 0.7, 0.8, 0.9\}\)
-	\item \(\theta \in \{2.0, 2.5, 3.0, 3.5\}\) (interpreted as z-threshold for z-score source and retained as a compatibility sweep field during source-comparison runs)
 \end{itemize}
 
 The objective is protocol-defined utility:
@@ -219,7 +218,7 @@ U = 0.45\,\text{safe} - 0.25\,\text{anom} - 0.15\,\text{contention} - 0.10\,\tex
 
 with tie-breakers favouring higher safe placement, fewer anomalies, lower contention, better fairness, and lower latency.
 
-Based on the replication evidence in Chapter~\ref{chapter2}---where NSA achieved near-perfect precision and F1 scores of 0.946--0.980 on real cluster telemetry, substantially outperforming K-means across all configurations---NSA was adopted as the anomaly source for the hybrid scheduler. Offline policy evaluation on the development split confirmed this choice: NSA was the only source to produce a non-negative utility delta against the prediction-only baseline. The full development-stage selection configuration is summarised in Table~\ref{tab:ch3-selection-config}.
+Based on the replication evidence in Chapter~\ref{chapter2} NSA was adopted as the anomaly source for the hybrid scheduler. The full development-stage selection configuration is summarised in Table~\ref{tab:ch3-selection-config}.
 
 \begin{table}[h]
 	\centering
@@ -231,7 +230,6 @@ Based on the replication evidence in Chapter~\ref{chapter2}---where NSA achieved
 		Warmup & 15 \\
 		Anomaly history & 45 \\
 		Weight grid & 0.5, 0.6, 0.7, 0.8, 0.9 \\
-		Threshold sweep field & 2.0, 2.5, 3.0, 3.5 \\
 		Objective & Utility (protocol weighted) \\
 		\hline
 	\end{tabular}
@@ -279,7 +277,7 @@ Figure~\ref{fig:trial-structure} illustrates the structure of a single trial.
 
 \begin{figure}[htbp]
 	\centering
-	\includegraphics[width=0.55\textwidth]{../docs/trial-structure.png}
+	\includegraphics[width=0.55\textwidth]{./docs/trial-structure.png}
 	\caption{Structure of a single matched-arm trial. The baseline arm runs first under the default Kubernetes scheduler, followed by the custom arm under identical workload and stress conditions. Each arm contains a normal phase and a stress phase. This sequence is repeated across five independent trials.}
 	\label{fig:trial-structure}
 \end{figure}
@@ -349,4 +347,4 @@ A \texttt{.gitignore} file excludes compiled Python bytecode, virtual environmen
 
 \section{Methodology Summary}
 
-This chapter defined a staged methodology for evaluating an anomaly-aware lightweight scheduler against the default Kubernetes scheduler in an edge cluster setting. Data collection, labelling, predictor training, and policy selection were conducted offline to lock the custom scheduler configuration without exposure to the online evaluation outcomes. The authoritative comparison was performed through a matched-arm online experiment on a live K3s cluster, where identical workload sequences were submitted to both the default and custom schedulers under normal and stress conditions across multiple independent trials. The next chapter reports implementation details and evaluation outcomes using this methodological framework.
+This chapter defined a staged methodology for evaluating an anomaly-aware lightweight scheduler against the default Kubernetes scheduler in an edge cluster setting. Data collection, labelling, predictor training, and policy selection were conducted offline to lock the custom scheduler configuration without exposure to the online evaluation outcomes. The authoritative comparison was performed through a matched-arm online experiment on a live K3s cluster, where identical workload sequences were submitted to both the default and custom schedulers under normal and stress conditions across multiple independent trials. The next chapters report implementation details and evaluation outcomes using this methodological framework.

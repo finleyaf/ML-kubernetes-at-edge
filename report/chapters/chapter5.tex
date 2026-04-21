@@ -75,7 +75,7 @@ Table~\ref{tab:ch5-per-phase} disaggregates mean timing deltas by experimental p
 	\label{tab:ch5-per-phase}
 \end{table}
 
-During the stress phase---the scenario the hybrid scheduler was designed for---total pod time improved by 0.08~s on average. The startup improvement ($-0.15$~s) outweighs the scheduling latency cost ($+0.07$~s), suggesting that anomaly-aware placement routes pods to less contended nodes where container startup completes faster. Under normal conditions, the effect reverses: the custom scheduler adds 0.17~s to total time with no latency benefit, consistent with the expectation that anomaly-aware scoring provides little advantage when no anomaly is present.
+During the stress phase, the scenario the hybrid scheduler was designed for, total pod time improved by 0.08~s on average. The startup improvement ($-0.15$~s) outweighs the scheduling latency cost ($+0.07$~s), suggesting that anomaly-aware placement routes pods to less contended nodes where container startup completes faster. Under normal conditions, the effect reverses: the custom scheduler adds 0.17~s to total time with no latency benefit, consistent with the expectation that anomaly-aware scoring provides little advantage when no anomaly is present.
 
 \subsection{Per-Workload Breakdown}
 
@@ -99,7 +99,7 @@ Table~\ref{tab:ch5-per-workload} reports the full phase$\times$workload timing m
 	\label{tab:ch5-per-workload}
 \end{table}
 
-The stress-phase CPU workload shows the best improvement ($-0.84$~s total), consistent with the hypothesis that CPU-intensive pods benefit most from anomaly-aware avoidance of stressed nodes. Mixed workloads show the largest regression in both phases ($+0.84$~s), suggesting that the hybrid scoring formula---which weights CPU and memory equally---may not optimally handle workloads that simultaneously saturate both resource dimensions.
+The stress-phase CPU workload shows the best improvement ($-0.84$~s total), consistent with the hypothesis that CPU-intensive pods benefit most from anomaly-aware avoidance of stressed nodes. Mixed workloads show the largest regression in both phases ($+0.84$~s), suggesting that the hybrid scoring formula, which weights CPU and memory equally, may not optimally handle workloads that simultaneously saturate both resource dimensions.
 
 
 \section{Hypothesis Evaluation}
@@ -122,7 +122,7 @@ This section evaluates each hypothesis stated in Chapter~\ref{chapter3} against 
 
 \textbf{Evidence.} The mean scheduling latency delta is $+33.3$~ms and the mean startup time delta is $+15.0$~ms (Table~\ref{tab:ch5-aggregate}). In context, each pod executes a 60-second stress workload, making the 33~ms latency overhead approximately 0.06\% of pod lifetime. The per-phase breakdown (Table~\ref{tab:ch5-per-phase}) shows that during stress, the custom scheduler actually reduces total pod time by 0.08~s: the startup time improvement from better placement more than offsets the scheduling latency cost.
 
-\textbf{Verdict.} \textbf{Supported.} The scheduling overhead is negligible relative to pod lifetime. The 33~ms overhead likely originates from the second \texttt{kube-scheduler} instance's leader election and network path rather than from the ranking computation itself, since the Node\-Predictor and anomaly monitor operate on in-memory buffers with sub-millisecond inference (Chapter~\ref{chapter4}). Critically, during stress---the target operating condition---the overhead is fully compensated by improved startup time through better placement.
+\textbf{Verdict.} \textbf{Supported.} The scheduling overhead is negligible relative to pod lifetime. The 33~ms overhead likely originates from the second \texttt{kube-scheduler} instance's leader election and network path rather than from the ranking computation itself, since the Node\-Predictor and anomaly monitor operate on in-memory buffers with sub-millisecond inference (Chapter~\ref{chapter4}). Critically, during stress (the target operating condition) the overhead is fully compensated by improved startup time through better placement.
 
 
 \subsection{H3: Offline-to-Online Transfer}
@@ -139,11 +139,11 @@ This section evaluates each hypothesis stated in Chapter~\ref{chapter3} against 
 
 \subsection{Effectiveness of the Hybrid Approach}
 
-The results indicate that the hybrid approach---combining workload prediction with anomaly monitoring---provides a measurable benefit over the default Kubernetes scheduler, principally through reduced placement on contended nodes. The contention reduction of 4~pp is the largest single-metric improvement and is attributable to the anomaly component (NSA), which signals elevated risk when node telemetry departs from learned normal patterns.
+The results indicate that the hybrid approach provides a measurable benefit over the default Kubernetes scheduler, principally through reduced placement on contended nodes. The contention reduction of 4~pp is the largest single-metric improvement and is attributable to the anomaly component (NSA), which signals elevated risk when node telemetry departs from learned normal patterns.
 
 The dominance of the prediction weight (0.9 versus 0.1 for anomaly) in the locked configuration suggests that predicted load is the primary scheduling signal, with anomaly risk acting as a corrective during stress periods. This is consistent with the per-phase results (Table~\ref{tab:ch5-per-phase}): the custom scheduler's advantage materialises during stress, where the anomaly signal is active, and disappears during normal operation, where the anomaly monitor produces low or zero risk scores.
 
-The adaptive weighting mechanism---which shifts the prediction/anomaly balance based on current risk level---is designed to amplify this stress-phase effect. The stress-phase placement improvement provides indirect evidence that the mechanism operates as intended, though isolating its contribution from the static weight configuration would require additional ablation experiments.
+The adaptive weighting mechanism, which shifts the prediction/anomaly balance based on current risk level, is designed to amplify this stress-phase effect. The stress-phase placement improvement provides indirect evidence that the mechanism operates as intended, though isolating its contribution from the static weight configuration would require additional ablation experiments.
 
 
 \subsection{The Run~003 Reversal}
@@ -167,12 +167,12 @@ Fritzsche~et~al.~\cite{fritzsche2024lightweight} demonstrated that lightweight M
 
 Several recent works have applied reinforcement learning to Kubernetes scheduling. Song~et~al.~\cite{song2025dqks} proposed DQKS, a DDQN-based pluggable scheduler, and Pattan~\cite{pattan2025reinforcement} explored RL for distributed orchestration. These approaches are more expressive than the linear predictor used here, but they require online training episodes and reward shaping that are difficult to implement on small edge clusters with limited workload diversity. The present system's overhead of 33~ms per scheduling decision is substantially lighter than RL-based approaches that require neural network inference at each decision point.
 
-Liu~et~al.~\cite{liu2024dynamic} and Pashaeehir~et~al.~\cite{pashaeehir2025kubedsm} addressed dynamic scheduling in collaborative edge settings, while Rasouli~et~al.~\cite{rasouli2025false} focused on failure-aware scheduling for mission-critical edge applications. The present work shares their motivation---scheduling quality under resource pressure at the edge---but is distinguished by its explicit anomaly-detection integration and its use of a matched-arm experimental design for evaluation rather than simulation-only comparison.
+Liu~et~al.~\cite{liu2024dynamic} and Pashaeehir~et~al.~\cite{pashaeehir2025kubedsm} addressed dynamic scheduling in collaborative edge settings, while Rasouli~et~al.~\cite{rasouli2025false} focused on failure-aware scheduling for mission-critical edge applications. The present work shares their motivation (scheduling quality under resource pressure at the edge), but is distinguished by its explicit anomaly-detection integration and its use of a matched-arm experimental design for evaluation rather than simulation-only comparison.
 
 
 \subsection{Wider Issues}
 
-\textbf{Ethical considerations.} Automated scheduling decisions directly affect service availability and quality of service. A biased anomaly detector could systematically avoid certain nodes, creating resource unfairness. The fairness metric was tracked throughout the experiment---fairness delta was 0\% in four of five trials, with minor fluctuations in run~004---providing evidence that the current system does not introduce systematic node-level bias. However, this assurance is limited by the two-node cluster topology; fairness risks would increase with more heterogeneous deployments.
+\textbf{Ethical considerations.} Automated scheduling decisions directly affect service availability and quality of service. A biased anomaly detector could systematically avoid certain nodes, creating resource unfairness. The fairness metric was tracked throughout the experiment (fairness delta was 0\% in four of five trials, with minor fluctuations in run~004) providing evidence that the current system does not introduce systematic node-level bias. However, this assurance is limited by the two-node cluster topology; fairness risks would increase with more heterogeneous deployments.
 
 \textbf{Legal and regulatory.} In production environments, scheduling decisions may fall under audit and compliance requirements, particularly for workloads handling personal data or operating in regulated sectors. The reproducibility package described in Chapter~\ref{chapter4} partially addresses this by preserving per-pod placement records, but a production deployment would require more comprehensive audit logging and decision explainability.
 
@@ -206,7 +206,7 @@ This project investigated whether a lightweight, anomaly-aware scheduling pipeli
 
 \textbf{RQ3 (Offline-to-online transfer).} The mean utility delta of $+2.0$ and four of five positive trials provide evidence that offline-locked parameters transfer to online deployment. However, the single negative trial and the small sample size mean H3 is only partially supported.
 
-The principal contribution is a complete, reproducible pipeline---from telemetry collection through anomaly-aware scheduling evaluation---deployed and evaluated on a live K3s edge cluster with a matched-arm experimental design. The pipeline demonstrates that integrating a lightweight anomaly signal into Kubernetes scheduling is feasible on resource-constrained edge nodes, and that the benefit primarily manifests as reduced contention during stress events.
+The principal contribution is a complete, reproducible pipeline, from telemetry collection through anomaly-aware scheduling evaluation, deployed and evaluated on a live K3s edge cluster with a matched-arm experimental design. The pipeline demonstrates that integrating a lightweight anomaly signal into Kubernetes scheduling is feasible on resource-constrained edge nodes, and that the benefit primarily manifests as reduced contention during stress events.
 
 
 \section{Future Work}
@@ -219,7 +219,7 @@ Several directions could strengthen and extend the findings:
 
 	\item \textbf{Non-linear predictors.} Evaluating LSTM or gradient boosting models against the linear baseline could improve prediction accuracy during mixed-stress phases, where Ridge RMSE was highest at 0.111. The modular predictor interface (Chapter~\ref{chapter4}) supports drop-in model replacement without modifying the scheduler.
 
-	\item \textbf{Organic anomaly injection.} Replacing synthetic \texttt{stress} commands with realistic failure modes---disk I/O saturation, network partitioning, or cascading service degradation---would test whether the NSA detector generalises beyond the training distribution.
+	\item \textbf{Organic anomaly injection.} Replacing synthetic \texttt{stress} commands with realistic failure modes (disk I/O saturation, network partitioning, or cascading service degradation) would test whether the NSA detector generalises beyond the training distribution.
 
 	\item \textbf{Learned utility weights.} Bayesian optimisation or multi-objective search could tune the utility function weights from operator preferences or historical QoS data, removing the current reliance on manual specification.
 

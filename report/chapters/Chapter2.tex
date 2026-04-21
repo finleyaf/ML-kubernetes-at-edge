@@ -3,11 +3,7 @@
 
 \section{Anomaly Detection Replication}
 
-This section presents a replication and analysis of a lightweight anomaly detection approach proposed for edge-based Kubernetes clusters. The goal is not only to reproduce reported behaviour, but also to evaluate its robustness under realistic edge preprocessing conditions.
-
-\subsection{Introduction}
-
-As discussed in Chapter~\ref{chapter1}, lightweight anomaly detection is essential for edge Kubernetes environments operating under resource constraints and dynamic workloads. This section replicates the K-means and NSA detection approach of Fritzsche et al.~\cite{fritzsche2024lightweight} under controlled offline conditions to evaluate detector behaviour and sensitivity to preprocessing choices, establishing the evidence base that informs anomaly-source selection in the scheduling pipeline.
+This chapter presents a replication and analysis of the lightweight anomaly detection approach proposed by Fritzsche et al.~\cite{fritzsche2024lightweight} for edge-based Kubernetes clusters. The goal is not only to reproduce reported behaviour, but also to evaluate its robustness under realistic edge preprocessing conditions, establishing the evidence base that informs anomaly-source selection in the scheduling pipeline.
 
 \subsection{Method Overview}
 
@@ -19,7 +15,7 @@ An offline evaluation was conducted to isolate detector behaviour from runtime c
 
 \subsubsection{Metrics}
 
-Synthetic edge metrics were generated using normal distributions to simulate CPU, memory, and network utilisation under typical operating conditions. Two modes of anomaly injection were used---subtle (transient point anomalies) and sustained (prolonged multi-dimensional deviations)---which present varying sensitivity to preprocessing.
+Synthetic edge metrics were generated using normal distributions to simulate CPU, memory, and network utilisation under typical operating conditions. Two modes of anomaly injection were used: subtle (transient point anomalies) and sustained (prolonged multi-dimensional deviations), which present varying sensitivity to preprocessing.
 
 Subtle point anomalies were designed to emulate transient workload disturbances common in edge environments. However, after rolling-window smoothing and feature normalisation, these anomalies became geometrically embedded within the normal data distribution. As a result, no distinct non-self region emerged, rendering NSA incapable of detecting such deviations by design.
 
@@ -101,7 +97,7 @@ Figure~\ref{fig:online-system-architecture} presents the deployed online telemet
 
 The experiment was structured as six sequential phases, each lasting 120 seconds. The phases progressed from a normal-load baseline, through four distinct stress injection scenarios, to a recovery period. For each stress phase, the \texttt{stress} tool was invoked on the target node via SSH, injecting load into specific resource subsystems. The start and end timestamps of each phase were recorded automatically to enable programmatic labelling of the collected dataset.
 
-Metrics were collected from all three nodes throughout the experiment, including the control node. Although the control node is excluded from scheduling by a \texttt{NoSchedule} taint (and therefore from anomaly detection evaluation), its resource consumption is still relevant: the control node runs real processes---the Kubernetes API server, controller manager, scheduler, and etcd---whose load can vary with cluster activity. Collecting its metrics provides a complete picture of cluster-wide resource use. Since worker-only filtering is applied at the evaluation stage, the memory stress phase on the control node (stress-2) produces no anomalous signal in the detection results: from the perspective of the two worker nodes, this phase is a normal-load period, effectively widening the baseline distribution used to train the detectors.
+Metrics were collected from all three nodes throughout the experiment, including the control node. Although the control node is excluded from scheduling by a \texttt{NoSchedule} taint (and therefore from anomaly detection evaluation), its resource consumption is still relevant: the control node runs real processes (Kubernetes API server, controller manager, scheduler, etcd) whose load can vary with cluster activity. Collecting its metrics provides a complete picture of cluster-wide resource use. Since worker-only filtering is applied at the evaluation stage, the memory stress phase on the control node (stress-2) produces no anomalous signal in the detection results: from the perspective of the two worker nodes, this phase is a normal-load period, effectively widening the baseline distribution used to train the detectors.
 
 Labelling was applied per-node: only the node targeted by a given stress phase was marked anomalous for the duration of that phase. Worker nodes not targeted by a stress phase were labelled normal, regardless of whether indirect resource contention was observed. Detection evaluation was restricted to worker nodes only, since these are the nodes to which pods are scheduled in live edge deployments.
 
@@ -194,4 +190,4 @@ Real Netdata telemetry is inherently noisier than synthetic normal-distribution 
 
 \subsection{Summary}
 
-The online replication demonstrates that the lightweight anomaly detection pipeline of Fritzsche et al.~\cite{fritzsche2024lightweight} performs effectively on real K3s cluster telemetry. NSA achieved near-perfect precision at all window sizes, with the best overall configuration being NSA with a window size of 3, yielding F1 scores of 0.946 and 0.980 on the two worker nodes. K-means proved unreliable on real metrics, successfully detecting anomalies only under heavier smoothing and only on one of the two nodes. Based on these results, NSA with a rolling window of 3 was carried into scheduler-side anomaly-source comparison (NSA, z-score, K-means), where NSA was retained as the selected anomaly source for anomaly-aware policy evaluation in Chapter~\ref{chapter3}.
+The online replication demonstrates that the lightweight anomaly detection pipeline of Fritzsche et al.~\cite{fritzsche2024lightweight} performs effectively on real K3s cluster telemetry. NSA achieved near-perfect precision at all window sizes, with the best overall configuration being NSA with a window size of 3, yielding F1 scores of 0.946 and 0.980 on the two worker nodes. K-means proved unreliable on real metrics, successfully detecting anomalies only under heavier smoothing and only on one of the two nodes. Based on these results, NSA with a rolling window of 3 was retained as the selected anomaly source for anomaly-aware policy evaluation in Chapter~\ref{chapter3}.
