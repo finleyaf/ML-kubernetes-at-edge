@@ -89,8 +89,13 @@ spec:
         app: custom-rank-scheduler
     spec:
       serviceAccountName: custom-rank-scheduler
-      hostNetwork: true
       priorityClassName: system-cluster-critical
+      nodeSelector:
+        kubernetes.io/hostname: k3s-control
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
       containers:
         - name: kube-scheduler
           image: registry.k8s.io/kube-scheduler:v1.30.0

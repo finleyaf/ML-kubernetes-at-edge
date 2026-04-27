@@ -336,6 +336,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Phase 4 prediction validation (rolling-origin + strict holdout)")
     parser.add_argument("--runs-dir", required=True, help="Path to anomaly-detection/online-telemetry/dataset/runs")
     parser.add_argument("--output-dir", required=True, help="Directory for validation outputs")
+    parser.add_argument("--run-ids", nargs="*", default=None, help="Optional subset of run ids to include")
     parser.add_argument("--windows", nargs="+", type=int, default=[5, 10])
     parser.add_argument("--horizons", nargs="+", type=int, default=[3, 5])
     parser.add_argument("--min-train-runs", type=int, default=8, help="Minimum runs before first rolling fold")
@@ -346,6 +347,14 @@ def main() -> None:
     os.makedirs(args.output_dir, exist_ok=True)
 
     data_by_run_node, ordered_runs, run_phase_sets = load_runs(args.runs_dir)
+    if args.run_ids:
+        requested = set(args.run_ids)
+        ordered_runs = [run_id for run_id in ordered_runs if run_id in requested]
+        data_by_run_node = {run_id: data_by_run_node[run_id] for run_id in ordered_runs}
+        run_phase_sets = {run_id: run_phase_sets.get(run_id, set()) for run_id in ordered_runs}
+        if not ordered_runs:
+            raise RuntimeError("No valid runs remain after applying --run-ids filter")
+
     if args.holdout_runs:
         holdout_runs = [r for r in args.holdout_runs if r in ordered_runs]
         holdout_strategy = "explicit"

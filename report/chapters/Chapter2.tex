@@ -1,9 +1,9 @@
-\chapter{Replication report}
+\chapter{Replication Studies Supporting Detector Choice}
 \label{chapter2}
 
 \section{Anomaly Detection Replication}
 
-This chapter presents a replication and analysis of the lightweight anomaly detection approach proposed by Fritzsche et al.~\cite{fritzsche2024lightweight} for edge-based Kubernetes clusters. The goal is not only to reproduce reported behaviour, but also to evaluate its robustness under realistic edge preprocessing conditions, establishing the evidence base that informs anomaly-source selection in the scheduling pipeline.
+This appendix presents the replication studies that informed anomaly-source selection and preprocessing choices for the final scheduling pipeline. Its role is evidential rather than dispositive: the experiments reported here justify the choice of NSA and clarify preprocessing sensitivity, but they do not themselves constitute the final scheduler comparison.
 
 \subsection{Method Overview}
 
@@ -80,7 +80,7 @@ Subtle point anomalies (Dataset~A) were geometrically embedded within the normal
 
 \subsection{Environment Setup}
 
-The experimental cluster was provisioned on Google Cloud using three virtual machines in the \texttt{europe-west2-c} zone: one \texttt{e2-medium} instance serving as the control plane and two \texttt{e2-small} instances acting as worker nodes. K3s was used as the Kubernetes distribution in place of the full upstream package. As described in Section~\ref{chapter1}, K3s is designed specifically for resource-constrained and remote environments, reducing the operational footprint through a single-binary deployment, an embedded datastore, automated TLS management, and minimal external dependencies. This makes it a closer approximation of realistic edge cluster hardware than a standard Kubernetes installation on cloud VMs.
+The replication cluster used an earlier three-VM Google Cloud deployment in the \texttt{europe-west2-c} zone: one \texttt{e2-medium} instance serving as the control plane and two \texttt{e2-small} instances acting as worker nodes. K3s was used as the Kubernetes distribution in place of the full upstream package. As described in Section~\ref{chapter1}, K3s is designed specifically for resource-constrained and remote environments, reducing the operational footprint through a single-binary deployment, an embedded datastore, automated TLS management, and minimal external dependencies. This earlier replication cluster should be read as supporting context rather than as the final heterogeneous cluster used in the authoritative matched-arm study.
 
 Netdata was selected as the telemetry platform because it is built for edge-first deployment: it delivers per-second metric precision, maintains a minimal CPU and memory footprint during collection, and operates autonomously when upstream connectivity is interrupted. Netdata agents run on each node, streaming metrics to a parent instance on the control node for centralised collection. The following metrics are recorded per node at a one-second polling interval: CPU usage decomposed into user-space and kernel-space components, RAM utilisation, and network traffic separated into bytes received and bytes sent.
 
@@ -190,4 +190,4 @@ Real Netdata telemetry is inherently noisier than synthetic normal-distribution 
 
 \subsection{Summary}
 
-The online replication demonstrates that the lightweight anomaly detection pipeline of Fritzsche et al.~\cite{fritzsche2024lightweight} performs effectively on real K3s cluster telemetry. NSA achieved near-perfect precision at all window sizes, with the best overall configuration being NSA with a window size of 3, yielding F1 scores of 0.946 and 0.980 on the two worker nodes. K-means proved unreliable on real metrics, successfully detecting anomalies only under heavier smoothing and only on one of the two nodes. Based on these results, NSA with a rolling window of 3 was retained as the selected anomaly source for anomaly-aware policy evaluation in Chapter~\ref{chapter3}.
+The online replication demonstrates that the lightweight anomaly detection pipeline of Fritzsche et al.~\cite{fritzsche2024lightweight} performs effectively on real K3s cluster telemetry. NSA achieved near-perfect precision at all window sizes, with the best overall configuration being NSA with a window size of 3, yielding F1 scores of 0.946 and 0.980 on the two worker nodes. K-means proved unreliable on real metrics, successfully detecting anomalies only under heavier smoothing and only on one of the two nodes. These results motivated retaining NSA as the anomaly source for the final hybrid scheduler. The final live methodology in Chapter~\ref{chapter3} carries that detector choice forward, but evaluates it under a redesigned heterogeneous-cluster protocol rather than under the earlier replication setup documented here.

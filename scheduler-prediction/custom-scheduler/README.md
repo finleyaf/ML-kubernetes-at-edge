@@ -3,14 +3,14 @@
 This module provides a lightweight hybrid node-ranking engine that combines:
 
 - Predicted future load (from `prediction/predictor.py` models)
-- Online anomaly risk (rolling z-score monitor per node)
+- Online anomaly risk from z-score, NSA, or k-means detectors
 
 ## Files
 
 - `hybrid_scheduler.py`: core scoring logic
 - `simulate_scheduler.py`: replay-based evaluation on labelled telemetry
 - `rank_live.py`: rank nodes from recent telemetry and return best target node
-- `offline_policy_evaluation.py`: paired offline comparison for prediction-only, anomaly-only, and hybrid policies with validation-only tuning and untouched test evaluation
+- `offline_policy_evaluation.py`: paired offline comparison for prediction-only, anomaly-only, and hybrid policies, with defaults aligned to the locked final live policy family
 
 ## Run simulation
 
@@ -54,7 +54,7 @@ The output JSON includes:
 
 ## Phase 5 Offline Policy Evaluation
 
-Run paired policy comparison with validation-only grid search and untouched holdout test:
+Run paired policy comparison using the locked final live policy family defaults:
 
 ```bash
 python custom-scheduler/offline_policy_evaluation.py \
@@ -62,12 +62,12 @@ python custom-scheduler/offline_policy_evaluation.py \
   --model-dir prediction/models \
   --protocol custom-scheduler/evaluation_protocol.json \
   --split-config prediction/results/phase4_validation/locked_predictor_config.json \
-  --stage selection \
   --window 5 \
-  --warmup 15 \
+  --warmup 24 \
   --anomaly-history 45 \
-  --weight-grid 0.5,0.6,0.7,0.8,0.9 \
-  --z-grid 2.0,2.5,3.0,3.5 \
+  --anomaly-source nsa \
+  --weight-grid 0.9 \
+  --z-grid 2.5 \
   --output custom-scheduler/results/offline_policy_evaluation.json
 ```
 
@@ -77,47 +77,12 @@ This produces:
 - Three policies: prediction-only, anomaly-only, hybrid.
 - Metrics: safe placement rate, anomalous placement count/rate, high-contention decision rate, placement fairness (Jain index and percent), decision latency, and protocol utility score.
 - Weight telemetry per policy: average effective prediction/anomaly weights, fraction of decisions where anomaly weight exceeds prediction weight, and near-anomaly-only / near-prediction-only fractions.
-- Grid search on validation runs only.
+- A locked offline audit surface that matches the final live policy family by default.
 - Final confirmation on untouched test runs.
 - Run-level consistency checks for hybrid vs prediction-only on validation and test splits.
 - A split manifest JSON saved next to the output for auditability.
 
-## Anti-Peeking Workflow (Recommended)
-
-Use two explicit stages to prevent accidental holdout peeking during iterative tuning:
-
-1. Selection stage (dev runs only, no holdout metrics written)
-
-```bash
-python custom-scheduler/offline_policy_evaluation.py \
-  --runs-dir ../anomaly-detection/online-telemetry/dataset/runs \
-  --model-dir prediction/models \
-  --protocol custom-scheduler/evaluation_protocol.json \
-  --split-config prediction/results/phase4_validation/locked_predictor_config.json \
-  --stage selection \
-  --weight-grid 0.5,0.6,0.7,0.8,0.9 \
-  --z-grid 2.0,2.5,3.0,3.5 \
-  --output custom-scheduler/results/offline_policy_selection.json
-```
-
-2. Audit stage (strict holdout only, fixed config from selection output)
-
-```bash
-python custom-scheduler/offline_policy_evaluation.py \
-  --runs-dir ../anomaly-detection/online-telemetry/dataset/runs \
-  --model-dir prediction/models \
-  --protocol custom-scheduler/evaluation_protocol.json \
-  --split-config prediction/results/phase4_validation/locked_predictor_config.json \
-  --stage audit \
-  --selected-config custom-scheduler/results/offline_policy_selection.json \
-  --output custom-scheduler/results/offline_policy_audit.json
-```
-
-Notes:
-
-- `--stage selection` never computes or emits holdout evaluation results.
-- `--stage audit` requires either `--selected-config` or both `--fixed-pred-weight` and `--fixed-z-threshold`.
-- `--stage both` is available for convenience but not recommended for iterative experimentation.
+If you intentionally want to reopen exploratory offline tuning, pass explicit alternative values for `--anomaly-source`, `--weight-grid`, or `--z-grid` rather than relying on the locked defaults.
 
 ## Locked Evaluation Rules
 

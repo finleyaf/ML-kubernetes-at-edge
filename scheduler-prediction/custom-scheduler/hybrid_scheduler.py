@@ -1,7 +1,7 @@
 import math
 from collections import deque
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 import numpy as np
 
@@ -21,9 +21,26 @@ class NodeScore:
     node: str
     total_score: float
     predicted_load: float
+    base_predicted_load: float
     anomaly_risk: float
     weight_prediction: float
     weight_anomaly: float
+    cpu_request_fraction: float
+    memory_request_fraction: float
+    capacity_penalty: float
+    prediction_source: str
+
+
+@dataclass
+class NodeCapacity:
+    cpu_millicores: float
+    memory_mib: float
+
+
+@dataclass
+class WorkloadDemand:
+    cpu_millicores: float = 0.0
+    memory_mib: float = 0.0
 
 
 class NodeAnomalyMonitor:
@@ -271,6 +288,8 @@ class HybridScheduler:
         adaptive_max_shift: float = 0.35,
         adaptive_min_prediction_weight: float = 0.05,
         adaptive_max_prediction_weight: float = 0.95,
+        node_capacities: Optional[Dict[str, NodeCapacity]] = None,
+        capacity_penalty_factor: float = 1.0,
     ):
         if abs((weight_prediction + weight_anomaly) - 1.0) > 1e-6:
             raise ValueError("weight_prediction + weight_anomaly must equal 1.0")
@@ -284,6 +303,8 @@ class HybridScheduler:
         self.adaptive_max_shift = adaptive_max_shift
         self.adaptive_min_prediction_weight = adaptive_min_prediction_weight
         self.adaptive_max_prediction_weight = adaptive_max_prediction_weight
+        self.capacity_penalty_factor = max(0.0, float(capacity_penalty_factor))
+        self.node_capacities = node_capacities or {}
 
         if self.adaptive_risk_low >= self.adaptive_risk_high:
             raise ValueError("adaptive_risk_low must be < adaptive_risk_high")
@@ -334,7 +355,36 @@ class HybridScheduler:
         net = min(observation["net_received"] + observation["net_sent"], 100.0) / 100.0
         return round(0.4 * cpu + 0.4 * mem + 0.2 * net, 4)
 
-    def score_nodes(self, observations_by_node: Dict[str, Dict[str, float]]) -> List[NodeScore]:
+    def _capacity_penalty(
+        self,
+        node: str,
+        workload_request: Optional[WorkloadDemand],
+    ) -> tuple[float, float, float]:
+        if workload_request is None:
+            return 0.0, 0.0, 0.0
+
+        capacity = self.node_capacities.get(node)
+        if capacity is None:
+            return 0.0, 0.0, 0.0
+
+        cpu_fraction = 0.0
+        memory_fraction = 0.0
+
+        if capacity.cpu_millicores > 0:
+            cpu_fraction = workload_request.cpu_millicores / capacity.cpu_millicores
+        if capacity.memory_mib > 0:
+            memory_fraction = workload_request.memory_mib / capacity.memory_mib
+
+        cpu_fraction = max(0.0, float(cpu_fraction))
+        memory_fraction = max(0.0, float(memory_fraction))
+        penalty = self.capacity_penalty_factor * max(cpu_fraction, memory_fraction)
+        return cpu_fraction, memory_fraction, penalty
+
+    def score_nodes(
+        self,
+        observations_by_node: Dict[str, Dict[str, float]],
+        workload_request: Optional[WorkloadDemand] = None,
+    ) -> List[NodeScore]:
         """Return all nodes sorted from best (lowest score) to worst."""
         scored: List[NodeScore] = []
 
@@ -345,32 +395,50 @@ class HybridScheduler:
                 continue
 
             pred_load: Optional[float] = None
+            prediction_source = "model"
             if node in predictions:
                 pred_load = predictions[node]["load_score"]
             if pred_load is None:
                 pred_load = self._fallback_load(obs)
+                prediction_source = "fallback"
+
+            base_pred_load = round(float(pred_load), 4)
+            cpu_request_fraction, memory_request_fraction, capacity_penalty = self._capacity_penalty(
+                node,
+                workload_request,
+            )
+            projected_load = base_pred_load + capacity_penalty
 
             anomaly_risk = self.monitors[node].risk(obs)
             eff_pred_w = self._effective_prediction_weight(anomaly_risk)
             eff_anom_w = 1.0 - eff_pred_w
-            total = eff_pred_w * pred_load + eff_anom_w * anomaly_risk
+            total = eff_pred_w * projected_load + eff_anom_w * anomaly_risk
 
             scored.append(
                 NodeScore(
                     node=node,
                     total_score=round(float(total), 4),
-                    predicted_load=round(float(pred_load), 4),
+                    predicted_load=round(float(projected_load), 4),
+                    base_predicted_load=base_pred_load,
                     anomaly_risk=round(float(anomaly_risk), 4),
                     weight_prediction=round(float(eff_pred_w), 4),
                     weight_anomaly=round(float(eff_anom_w), 4),
+                    cpu_request_fraction=round(float(cpu_request_fraction), 4),
+                    memory_request_fraction=round(float(memory_request_fraction), 4),
+                    capacity_penalty=round(float(capacity_penalty), 4),
+                    prediction_source=prediction_source,
                 )
             )
 
         scored.sort(key=lambda s: s.total_score)
         return scored
 
-    def choose_node(self, observations_by_node: Dict[str, Dict[str, float]]) -> Optional[NodeScore]:
-        ranked = self.score_nodes(observations_by_node)
+    def choose_node(
+        self,
+        observations_by_node: Dict[str, Dict[str, float]],
+        workload_request: Optional[WorkloadDemand] = None,
+    ) -> Optional[NodeScore]:
+        ranked = self.score_nodes(observations_by_node, workload_request=workload_request)
         return ranked[0] if ranked else None
 
 

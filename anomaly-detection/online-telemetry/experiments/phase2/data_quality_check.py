@@ -161,10 +161,11 @@ def main():
     parser.add_argument("--runs-dir", required=True, help="Path to dataset/runs directory")
     parser.add_argument("--output-json", required=True, help="Output JSON report path")
     parser.add_argument("--output-csv", required=True, help="Output CSV summary path")
+    parser.add_argument("--run-ids", nargs="*", default=None, help="Optional subset of run ids to validate")
     parser.add_argument(
         "--expected-nodes",
         nargs="+",
-        default=["k3s-control", "k3s-worker-2", "k3s-worker-3"],
+        default=["k3s-control", "k3s-worker-2", "k3s-worker-3", "k3s-worker-4", "raspberrypi"],
         help="Expected node names in each run",
     )
     parser.add_argument("--min-rows", type=int, default=250, help="Minimum acceptable rows per run")
@@ -183,6 +184,11 @@ def main():
             if d.startswith("run_") and os.path.isdir(os.path.join(args.runs_dir, d))
         ]
     )
+    if args.run_ids:
+        selected = set(args.run_ids)
+        run_dirs = [run_dir for run_dir in run_dirs if os.path.basename(run_dir) in selected]
+        if not run_dirs:
+            raise RuntimeError("No matching run directories found for --run-ids")
 
     results = [
         per_run_checks(

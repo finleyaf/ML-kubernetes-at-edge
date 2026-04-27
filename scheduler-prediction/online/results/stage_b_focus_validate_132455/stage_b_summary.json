@@ -1,0 +1,394 @@
+{
+  "inputs": {
+    "baseline_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/scheduler-prediction/online/results/stage_b_focus_validate_132455/baseline_arm_scheduling.csv",
+    "custom_csv": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/scheduler-prediction/online/results/stage_b_focus_validate_132455/custom_arm_scheduling.csv",
+    "node_capacities": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/scheduler-prediction/online/results/stage_b_focus_validate_132455/node_capacities.json"
+  },
+  "locked_utility_weights": {
+    "safe_placement_rate": 0.45,
+    "anomalous_rate": 0.25,
+    "high_contention_decision_rate": 0.15,
+    "latency": 0.1,
+    "placement_fairness_percent": 0.05
+  },
+  "latency_scale_ms": 1000.0,
+  "baseline_arm": {
+    "total_pods": 2,
+    "node_placements": {
+      "raspberrypi": 2
+    },
+    "placement_fairness_percent": 100.0,
+    "capacity_alignment_percent": 100.0,
+    "avg_scheduling_latency_s": 0.0,
+    "avg_startup_time_s": null,
+    "avg_total_time_s": null,
+    "avg_chosen_relative_cpu": 0.2334,
+    "high_contention_rate_percent": 0.0,
+    "workloads": {
+      "cpu": {
+        "count": 2,
+        "avg_scheduling_latency_s": 0.0,
+        "avg_startup_time_s": null,
+        "avg_total_time_s": null,
+        "avg_chosen_relative_cpu": 0.2334
+      }
+    },
+    "stress_target_placement_rate_percent": 0.0,
+    "stress_target_avoidance_rate_percent": 100.0,
+    "expected_node_match_rate_percent": null,
+    "avg_decision_total_score": null,
+    "avg_decision_predicted_load": null,
+    "avg_decision_base_predicted_load": null,
+    "avg_decision_anomaly_risk": null,
+    "avg_decision_cpu_request_fraction": null,
+    "avg_decision_memory_request_fraction": null,
+    "avg_decision_capacity_penalty": null,
+    "decision_prediction_source_counts": {}
+  },
+  "custom_arm": {
+    "total_pods": 2,
+    "node_placements": {
+      "k3s-worker-2": 2
+    },
+    "placement_fairness_percent": 100.0,
+    "capacity_alignment_percent": 100.0,
+    "avg_scheduling_latency_s": 0.0,
+    "avg_startup_time_s": 5.5,
+    "avg_total_time_s": 5.5,
+    "avg_chosen_relative_cpu": 1.5365,
+    "high_contention_rate_percent": 50.0,
+    "workloads": {
+      "cpu": {
+        "count": 2,
+        "avg_scheduling_latency_s": 0.0,
+        "avg_startup_time_s": 5.5,
+        "avg_total_time_s": 5.5,
+        "avg_chosen_relative_cpu": 1.5365
+      }
+    },
+    "stress_target_placement_rate_percent": 0.0,
+    "stress_target_avoidance_rate_percent": 100.0,
+    "expected_node_match_rate_percent": 100.0,
+    "avg_decision_total_score": 0.3018,
+    "avg_decision_predicted_load": 0.3352,
+    "avg_decision_base_predicted_load": 0.2102,
+    "avg_decision_anomaly_risk": 0.0,
+    "avg_decision_cpu_request_fraction": 0.125,
+    "avg_decision_memory_request_fraction": 0.0326,
+    "avg_decision_capacity_penalty": 0.125,
+    "decision_prediction_source_counts": {
+      "model": 2
+    }
+  },
+  "baseline_arm_utility_components": {
+    "available_components": {
+      "safe_placement_rate": true,
+      "anomalous_rate": true,
+      "high_contention_decision_rate": true,
+      "latency": true,
+      "placement_fairness_percent": true
+    },
+    "component_values": {
+      "safe_placement_rate": 100.0,
+      "anomalous_rate": 0.0,
+      "high_contention_decision_rate": 0.0,
+      "avg_decision_latency_ms": 0.0,
+      "placement_fairness_percent": 100.0,
+      "safe_placements": 2,
+      "anomalous_placements": 0
+    },
+    "weighted_components": {
+      "safe_component": 45.0,
+      "anomalous_penalty": -0.0,
+      "contention_penalty": -0.0,
+      "latency_penalty": -0.0,
+      "fairness_component": 5.0
+    },
+    "utility_score": 50.0,
+    "notes": [
+      "utility components continue to use chosen_label/high_contention as secondary proxies",
+      "primary redesigned online metrics are reported separately in the summary and phase views"
+    ]
+  },
+  "custom_arm_utility_components": {
+    "available_components": {
+      "safe_placement_rate": true,
+      "anomalous_rate": true,
+      "high_contention_decision_rate": true,
+      "latency": true,
+      "placement_fairness_percent": true
+    },
+    "component_values": {
+      "safe_placement_rate": 50.0,
+      "anomalous_rate": 50.0,
+      "high_contention_decision_rate": 50.0,
+      "avg_decision_latency_ms": 0.0,
+      "placement_fairness_percent": 100.0,
+      "safe_placements": 1,
+      "anomalous_placements": 1
+    },
+    "weighted_components": {
+      "safe_component": 22.5,
+      "anomalous_penalty": -12.5,
+      "contention_penalty": -7.5,
+      "latency_penalty": -0.0,
+      "fairness_component": 5.0
+    },
+    "utility_score": 7.5,
+    "notes": [
+      "utility components continue to use chosen_label/high_contention as secondary proxies",
+      "primary redesigned online metrics are reported separately in the summary and phase views"
+    ]
+  },
+  "baseline_arm_by_phase": {
+    "normal": {
+      "total_pods": 1,
+      "node_placements": {
+        "raspberrypi": 1
+      },
+      "placement_fairness_percent": 100.0,
+      "capacity_alignment_percent": 100.0,
+      "avg_scheduling_latency_s": 0.0,
+      "avg_startup_time_s": null,
+      "avg_total_time_s": null,
+      "avg_chosen_relative_cpu": 0.3,
+      "high_contention_rate_percent": 0.0,
+      "workloads": {
+        "cpu": {
+          "count": 1,
+          "avg_scheduling_latency_s": 0.0,
+          "avg_startup_time_s": null,
+          "avg_total_time_s": null,
+          "avg_chosen_relative_cpu": 0.3
+        }
+      },
+      "stress_target_placement_rate_percent": null,
+      "stress_target_avoidance_rate_percent": null,
+      "expected_node_match_rate_percent": null,
+      "avg_decision_total_score": null,
+      "avg_decision_predicted_load": null,
+      "avg_decision_base_predicted_load": null,
+      "avg_decision_anomaly_risk": null,
+      "avg_decision_cpu_request_fraction": null,
+      "avg_decision_memory_request_fraction": null,
+      "avg_decision_capacity_penalty": null,
+      "decision_prediction_source_counts": {}
+    },
+    "stress_cpu": {
+      "total_pods": 1,
+      "node_placements": {
+        "raspberrypi": 1
+      },
+      "placement_fairness_percent": 100.0,
+      "capacity_alignment_percent": 100.0,
+      "avg_scheduling_latency_s": 0.0,
+      "avg_startup_time_s": null,
+      "avg_total_time_s": null,
+      "avg_chosen_relative_cpu": 0.1667,
+      "high_contention_rate_percent": 0.0,
+      "workloads": {
+        "cpu": {
+          "count": 1,
+          "avg_scheduling_latency_s": 0.0,
+          "avg_startup_time_s": null,
+          "avg_total_time_s": null,
+          "avg_chosen_relative_cpu": 0.1667
+        }
+      },
+      "stress_target_placement_rate_percent": 0.0,
+      "stress_target_avoidance_rate_percent": 100.0,
+      "expected_node_match_rate_percent": null,
+      "avg_decision_total_score": null,
+      "avg_decision_predicted_load": null,
+      "avg_decision_base_predicted_load": null,
+      "avg_decision_anomaly_risk": null,
+      "avg_decision_cpu_request_fraction": null,
+      "avg_decision_memory_request_fraction": null,
+      "avg_decision_capacity_penalty": null,
+      "decision_prediction_source_counts": {}
+    }
+  },
+  "custom_arm_by_phase": {
+    "normal": {
+      "total_pods": 1,
+      "node_placements": {
+        "k3s-worker-2": 1
+      },
+      "placement_fairness_percent": 100.0,
+      "capacity_alignment_percent": 100.0,
+      "avg_scheduling_latency_s": 0.0,
+      "avg_startup_time_s": 2.0,
+      "avg_total_time_s": 2.0,
+      "avg_chosen_relative_cpu": 2.16,
+      "high_contention_rate_percent": 100.0,
+      "workloads": {
+        "cpu": {
+          "count": 1,
+          "avg_scheduling_latency_s": 0.0,
+          "avg_startup_time_s": 2.0,
+          "avg_total_time_s": 2.0,
+          "avg_chosen_relative_cpu": 2.16
+        }
+      },
+      "stress_target_placement_rate_percent": null,
+      "stress_target_avoidance_rate_percent": null,
+      "expected_node_match_rate_percent": 100.0,
+      "avg_decision_total_score": 0.3037,
+      "avg_decision_predicted_load": 0.3374,
+      "avg_decision_base_predicted_load": 0.2124,
+      "avg_decision_anomaly_risk": 0.0,
+      "avg_decision_cpu_request_fraction": 0.125,
+      "avg_decision_memory_request_fraction": 0.0326,
+      "avg_decision_capacity_penalty": 0.125,
+      "decision_prediction_source_counts": {
+        "model": 1
+      }
+    },
+    "stress_cpu": {
+      "total_pods": 1,
+      "node_placements": {
+        "k3s-worker-2": 1
+      },
+      "placement_fairness_percent": 100.0,
+      "capacity_alignment_percent": 100.0,
+      "avg_scheduling_latency_s": 0.0,
+      "avg_startup_time_s": 9.0,
+      "avg_total_time_s": 9.0,
+      "avg_chosen_relative_cpu": 0.913,
+      "high_contention_rate_percent": 0.0,
+      "workloads": {
+        "cpu": {
+          "count": 1,
+          "avg_scheduling_latency_s": 0.0,
+          "avg_startup_time_s": 9.0,
+          "avg_total_time_s": 9.0,
+          "avg_chosen_relative_cpu": 0.913
+        }
+      },
+      "stress_target_placement_rate_percent": 0.0,
+      "stress_target_avoidance_rate_percent": 100.0,
+      "expected_node_match_rate_percent": 100.0,
+      "avg_decision_total_score": 0.2998,
+      "avg_decision_predicted_load": 0.3331,
+      "avg_decision_base_predicted_load": 0.2081,
+      "avg_decision_anomaly_risk": 0.0,
+      "avg_decision_cpu_request_fraction": 0.125,
+      "avg_decision_memory_request_fraction": 0.0326,
+      "avg_decision_capacity_penalty": 0.125,
+      "decision_prediction_source_counts": {
+        "model": 1
+      }
+    }
+  },
+  "baseline_arm_by_phase_workload": {
+    "normal": {
+      "cpu": {
+        "count": 1,
+        "avg_scheduling_latency_s": 0.0,
+        "avg_startup_time_s": null,
+        "avg_total_time_s": null
+      }
+    },
+    "stress_cpu": {
+      "cpu": {
+        "count": 1,
+        "avg_scheduling_latency_s": 0.0,
+        "avg_startup_time_s": null,
+        "avg_total_time_s": null
+      }
+    }
+  },
+  "custom_arm_by_phase_workload": {
+    "normal": {
+      "cpu": {
+        "count": 1,
+        "avg_scheduling_latency_s": 0.0,
+        "avg_startup_time_s": 2.0,
+        "avg_total_time_s": 2.0
+      }
+    },
+    "stress_cpu": {
+      "cpu": {
+        "count": 1,
+        "avg_scheduling_latency_s": 0.0,
+        "avg_startup_time_s": 9.0,
+        "avg_total_time_s": 9.0
+      }
+    }
+  },
+  "comparison_custom_minus_baseline": {
+    "placement_fairness_delta_pct": 0.0,
+    "capacity_alignment_delta_pct": 0.0,
+    "scheduling_latency_delta_s": 0.0,
+    "startup_time_delta_s": null,
+    "total_time_delta_s": null,
+    "high_contention_rate_delta_pct": 50.0,
+    "stress_target_placement_delta_pct": 0.0,
+    "stress_target_avoidance_delta_pct": 0.0,
+    "expected_node_match_delta_pct": null,
+    "chosen_relative_cpu_delta": 1.3031,
+    "decision_total_score_delta": null,
+    "decision_predicted_load_delta": null,
+    "decision_anomaly_risk_delta": null,
+    "decision_capacity_penalty_delta": null
+  },
+  "comparison_custom_minus_baseline_utility_components": {
+    "utility_delta": -42.5,
+    "safe_placement_rate_delta": -50.0,
+    "anomalous_rate_delta": 50.0,
+    "high_contention_rate_delta": 50.0,
+    "avg_decision_latency_ms_delta": 0.0,
+    "fairness_component_delta": 0.0,
+    "latency_penalty_delta": 0.0
+  },
+  "comparison_custom_minus_baseline_by_phase": {
+    "normal": {
+      "placement_fairness_delta_pct": 0.0,
+      "capacity_alignment_delta_pct": 0.0,
+      "scheduling_latency_delta_s": 0.0,
+      "startup_time_delta_s": null,
+      "total_time_delta_s": null,
+      "high_contention_rate_delta_pct": 100.0,
+      "stress_target_placement_delta_pct": null,
+      "stress_target_avoidance_delta_pct": null,
+      "expected_node_match_delta_pct": null,
+      "chosen_relative_cpu_delta": 1.86,
+      "decision_total_score_delta": null,
+      "decision_predicted_load_delta": null,
+      "decision_anomaly_risk_delta": null,
+      "decision_capacity_penalty_delta": null
+    },
+    "stress_cpu": {
+      "placement_fairness_delta_pct": 0.0,
+      "capacity_alignment_delta_pct": 0.0,
+      "scheduling_latency_delta_s": 0.0,
+      "startup_time_delta_s": null,
+      "total_time_delta_s": null,
+      "high_contention_rate_delta_pct": 0.0,
+      "stress_target_placement_delta_pct": 0.0,
+      "stress_target_avoidance_delta_pct": 0.0,
+      "expected_node_match_delta_pct": null,
+      "chosen_relative_cpu_delta": 0.7463,
+      "decision_total_score_delta": null,
+      "decision_predicted_load_delta": null,
+      "decision_anomaly_risk_delta": null,
+      "decision_capacity_penalty_delta": null
+    }
+  },
+  "comparison_custom_minus_baseline_by_phase_workload": {
+    "normal": {
+      "cpu": {
+        "scheduling_latency_delta_s": 0.0,
+        "startup_time_delta_s": null,
+        "total_time_delta_s": null
+      }
+    },
+    "stress_cpu": {
+      "cpu": {
+        "scheduling_latency_delta_s": 0.0,
+        "startup_time_delta_s": null,
+        "total_time_delta_s": null
+      }
+    }
+  }
+}

@@ -1,137 +1,79 @@
 \chapter{Results, Evaluation and Discussion}
 \label{chapter5}
 
-This chapter presents the results of the Stage~B online matched-arm experiment, evaluates each hypothesis against the evidence, discusses the findings in context, and identifies limitations and future work.
+This chapter is intentionally structured in advance of the final authoritative matched-arm execution. Numerical content will be inserted after running the redesigned Stage B experiment and collecting the final output artifacts. Until then, the chapter records the reporting structure, the interpretation plan, and the evidence sources that will be used.
 
 
 \section{Online Experiment Results}
 \label{sec:results}
 
-The matched-arm experiment was conducted over five independent trials (runs~002--006) on the live K3s cluster, each comprising a baseline arm (default Kubernetes scheduler) and a custom arm (hybrid anomaly-aware scheduler) executed sequentially under identical workload and stress conditions. This section reports the aggregate and disaggregated results.
+The final experiment will populate this chapter from the redesigned Stage B artifacts: the baseline and custom arm CSV files, the per-run metadata file, the exported node-capacity JSON, the decision-artifact directory, and the final \texttt{stage\_b\_summary.json}. The reporting emphasis will remain on custom-minus-baseline deltas so that the reader can distinguish scheduler effect from cluster-wide noise.
 
 \subsection{Aggregate Metrics}
 
-Table~\ref{tab:ch5-aggregate} summarises the mean custom-minus-baseline deltas across all five trials for the primary evaluation metrics.
+This subsection will report the aggregate custom-minus-baseline deltas for:
 
-\begin{table}[h]
-	\centering
-	\begin{tabular}{lr}
-		\hline
-		\textbf{Metric} & \textbf{Mean Delta} \\
-		\hline
-		Safe placement rate & $+2.0$ pp \\
-		Anomalous placement rate & $-2.0$ pp \\
-		High contention rate & $-4.0$ pp \\
-		Scheduling latency & $+33.3$ ms \\
-		Startup time & $+15.0$ ms \\
-		Utility & $+2.0$ \\
-		\hline
-	\end{tabular}
-	\caption{Mean custom-minus-baseline deltas across five matched-arm trials. Positive safe rate and negative anomalous/contention rates indicate improved placement quality. Utility is computed from the protocol-defined weighted formula (Section~\ref{sec:offline-selection}).}
-	\label{tab:ch5-aggregate}
-\end{table}
+\begin{itemize}
+\item safe placement rate
+\item anomalous placement rate
+\item high-contention rate
+\item scheduling latency
+\item startup time
+\item total time
+\item placement fairness
+\item capacity alignment
+\item utility score
+\end{itemize}
 
-On aggregate, the custom scheduler placed more pods on safe nodes ($+2.0$~pp), fewer pods on anomalous nodes ($-2.0$~pp), and fewer pods on contended nodes ($-4.0$~pp). The contention reduction of 4~pp is the largest single-metric improvement. The cost is a modest increase in scheduling latency ($+33.3$~ms) and startup time ($+15.0$~ms). The composite utility delta of $+2.0$ reflects the net benefit after weighting all components.
+One summary table will be inserted here after the run. The accompanying text will interpret whether the custom arm provides a net placement-quality improvement and whether any latency cost is operationally meaningful.
 
-\subsection{Per-Trial Breakdown}
-
-Table~\ref{tab:ch5-per-trial} reports the per-trial utility delta and its principal components. Four of five trials produced a positive utility delta; run~003 is the sole negative outlier.
-
-\begin{table}[h]
-	\centering
-	\begin{tabular}{lrrrrr}
-		\hline
-		\textbf{Trial} & \textbf{Utility $\Delta$} & \textbf{Safe $\Delta$ (pp)} & \textbf{Anom. $\Delta$ (pp)} & \textbf{Cont. $\Delta$ (pp)} & \textbf{Latency $\Delta$ (ms)} \\
-		\hline
-		run\_002 & $+5.17$ & $+6.67$ & $-6.67$ & $-3.33$ & $-33.3$ \\
-		run\_003 & $-4.66$ & $-6.67$ & $+6.67$ & $0.0$ & $-66.7$ \\
-		run\_004 & $+1.82$ & $+3.33$ & $-3.33$ & $+3.33$ & $+100.0$ \\
-		run\_005 & $+5.34$ & $+3.34$ & $-3.34$ & $-20.0$ & $-33.3$ \\
-		run\_006 & $+2.32$ & $+3.34$ & $-3.34$ & $0.0$ & $+200.0$ \\
-		\hline
-	\end{tabular}
-	\caption{Per-trial custom-minus-baseline deltas. Run~003 is the only trial with a negative utility delta and reversed safe/anomalous rates.}
-	\label{tab:ch5-per-trial}
-\end{table}
-
-The trial-level spread is notable: utility deltas range from $-4.66$ to $+5.34$. Run~005 produced the strongest result, driven primarily by a large contention reduction ($-20.0$~pp). Run~003 reversed the expected pattern entirely, with the custom scheduler placing more pods on anomalous nodes than the baseline. Possible explanations for this reversal are considered in Section~\ref{sec:discussion}.
 
 \subsection{Per-Phase Breakdown}
-\label{sec:per-phase}
 
-Table~\ref{tab:ch5-per-phase} disaggregates mean timing deltas by experimental phase.
+This subsection will summarise the experiment by phase: normal, stress\_cpu, stress\_memory, and stress\_mixed. The primary purpose is to test whether the custom scheduler helps most under stressed operation, which is the condition it was designed for.
 
-\begin{table}[h]
-	\centering
-	\begin{tabular}{lrrr}
-		\hline
-		\textbf{Phase} & \textbf{Latency $\Delta$ (s)} & \textbf{Startup $\Delta$ (s)} & \textbf{Total $\Delta$ (s)} \\
-		\hline
-		Normal & $0.00$ & $+0.17$ & $+0.17$ \\
-		Stress & $+0.07$ & $-0.15$ & $-0.08$ \\
-		\hline
-	\end{tabular}
-	\caption{Mean timing deltas by phase. The custom scheduler shows faster total pod time during stress at the cost of slightly slower startup during normal operation.}
-	\label{tab:ch5-per-phase}
-\end{table}
+The post-run analysis will report phase-level deltas for timing, contention, placement safety, and capacity alignment. If phase-specific reversals occur, they will be discussed here rather than hidden inside aggregate averages.
 
-During the stress phase, the scenario the hybrid scheduler was designed for, total pod time improved by 0.08~s on average. The startup improvement ($-0.15$~s) outweighs the scheduling latency cost ($+0.07$~s), suggesting that anomaly-aware placement routes pods to less contended nodes where container startup completes faster. Under normal conditions, the effect reverses: the custom scheduler adds 0.17~s to total time with no latency benefit, consistent with the expectation that anomaly-aware scoring provides little advantage when no anomaly is present.
 
 \subsection{Per-Workload Breakdown}
 
-Table~\ref{tab:ch5-per-workload} reports the full phase$\times$workload timing matrix.
+This subsection will report the interaction between phase and workload type (CPU, memory, and mixed). The key question is whether the custom scheduler behaves differently across single-resource and mixed-resource pods once workload requests are injected directly into the live ranker.
 
-\begin{table}[h]
-	\centering
-	\begin{tabular}{llrrr}
-		\hline
-		\textbf{Phase} & \textbf{Workload} & \textbf{Latency $\Delta$ (s)} & \textbf{Startup $\Delta$ (s)} & \textbf{Total $\Delta$ (s)} \\
-		\hline
-		Normal & cpu-pod & $-0.08$ & $-0.36$ & $-0.44$ \\
-		Normal & memory-pod & $0.00$ & $+0.12$ & $+0.12$ \\
-		Normal & mixed-pod & $+0.08$ & $+0.76$ & $+0.84$ \\
-		Stress & cpu-pod & $+0.04$ & $-0.88$ & $-0.84$ \\
-		Stress & memory-pod & $+0.04$ & $-0.31$ & $-0.27$ \\
-		Stress & mixed-pod & $+0.12$ & $+0.72$ & $+0.84$ \\
-		\hline
-	\end{tabular}
-	\caption{Mean timing deltas by phase and workload type. The largest improvement is stress-phase CPU pods ($-0.84$~s total); the largest regression is normal-phase and stress-phase mixed pods ($+0.84$~s total).}
-	\label{tab:ch5-per-workload}
-\end{table}
+The final version will include one table or figure summarising the phase$\times$workload matrix and a short paragraph identifying the strongest improvement bucket and the largest regression bucket, if any.
 
-The stress-phase CPU workload shows the best improvement ($-0.84$~s total), consistent with the hypothesis that CPU-intensive pods benefit most from anomaly-aware avoidance of stressed nodes. Mixed workloads show the largest regression in both phases ($+0.84$~s), suggesting that the hybrid scoring formula, which weights CPU and memory equally, may not optimally handle workloads that simultaneously saturate both resource dimensions.
+
+\subsection{Per-Decision Diagnostics}
+
+The redesigned pipeline records decision-level metadata that was absent from the earlier Stage B path. This subsection will use those artifacts to report:
+
+\begin{itemize}
+\item expected-node match rate for the custom arm
+\item stress-target avoidance or placement rates
+\item prediction-source counts (trained model versus fallback)
+\item mean decision score components, including projected load, anomaly risk, and capacity penalty
+\end{itemize}
+
+This material is important because it connects high-level outcome metrics back to the actual ranking behaviour of the custom arm.
 
 
 \section{Hypothesis Evaluation}
 \label{sec:hypothesis-eval}
 
-This section evaluates each hypothesis stated in Chapter~\ref{chapter3} against the online evidence.
+This section will evaluate each hypothesis from Chapter~\ref{chapter3} against the final online evidence.
 
 \subsection{H1: Placement Quality}
 
-\textbf{Hypothesis.} The custom scheduler improves safe placement rate and reduces anomalous placement rate compared to the default Kubernetes scheduler.
-
-\textbf{Evidence.} The mean safe placement rate delta is $+2.0$~pp and the mean anomalous placement rate delta is $-2.0$~pp across five trials (Table~\ref{tab:ch5-aggregate}). The high contention rate also decreased by 4.0~pp. At the trial level, four of five trials show the expected direction; run~003 is the exception, with safe rate $-6.67$~pp and anomalous rate $+6.67$~pp (Table~\ref{tab:ch5-per-trial}).
-
-\textbf{Verdict.} \textbf{Supported on aggregate.} The custom scheduler improves placement quality in the majority of trials and across the mean. However, the run~003 reversal demonstrates that the improvement is not uniform across all cluster states, and the magnitude of the improvement (2~pp) is modest. The contention reduction of 4~pp is more substantial and suggests the anomaly signal's primary value is in avoiding nodes with elevated resource pressure rather than avoiding outright anomalous nodes.
+Placeholder for final verdict after the run. The interpretation will be based primarily on safe placement, anomalous placement, and high-contention deltas, with phase-specific evidence used to determine whether improvements are robust or restricted to particular stress conditions.
 
 
 \subsection{H2: Scheduling Overhead}
 
-\textbf{Hypothesis.} The custom scheduler does not introduce practically significant scheduling latency or pod startup time overhead.
-
-\textbf{Evidence.} The mean scheduling latency delta is $+33.3$~ms and the mean startup time delta is $+15.0$~ms (Table~\ref{tab:ch5-aggregate}). In context, each pod executes a 60-second stress workload, making the 33~ms latency overhead approximately 0.06\% of pod lifetime. The per-phase breakdown (Table~\ref{tab:ch5-per-phase}) shows that during stress, the custom scheduler actually reduces total pod time by 0.08~s: the startup time improvement from better placement more than offsets the scheduling latency cost.
-
-\textbf{Verdict.} \textbf{Supported.} The scheduling overhead is negligible relative to pod lifetime. The 33~ms overhead likely originates from the second \texttt{kube-scheduler} instance's leader election and network path rather than from the ranking computation itself, since the Node\-Predictor and anomaly monitor operate on in-memory buffers with sub-millisecond inference (Chapter~\ref{chapter4}). Critically, during stress (the target operating condition) the overhead is fully compensated by improved startup time through better placement.
+Placeholder for final verdict after the run. The interpretation will compare scheduling latency cost against startup-time and total-time benefit, rather than treating latency in isolation.
 
 
 \subsection{H3: Offline-to-Online Transfer}
 
-\textbf{Hypothesis.} Policy parameters locked from offline selection yield positive utility delta when deployed online against the default scheduler across repeated matched-arm trials.
-
-\textbf{Evidence.} The mean utility delta is $+2.0$ across five trials, with four of five trials positive (Table~\ref{tab:ch5-per-trial}). The utility range is wide: $-4.66$ to $+5.34$. The offline audit stage passed its consistency check on the holdout split (Chapter~\ref{chapter4}), and NSA was confirmed as the best anomaly source both offline and online. The locked prediction weight of 0.9 and anomaly weight of 0.1 were not modified after selection.
-
-\textbf{Verdict.} \textbf{Partially supported.} The mean is positive and the majority of trials confirm the expected direction, demonstrating that offline-selected parameters can transfer to live deployment. However, the single negative trial (run~003, utility $-4.66$) shows that transfer is not unconditionally reliable. With only $N{=}5$ trials, computing a meaningful confidence interval is not possible, and the variance between trials is high relative to the mean effect size. The result is promising but falls short of demonstrating robust transfer.
+Placeholder for final verdict after the run. The interpretation will consider whether the locked hybrid family produces positive online utility against the default scheduler and whether the decision-level diagnostics support that transfer claim.
 
 
 \section{Discussion}
@@ -139,90 +81,49 @@ This section evaluates each hypothesis stated in Chapter~\ref{chapter3} against 
 
 \subsection{Effectiveness of the Hybrid Approach}
 
-The results indicate that the hybrid approach provides a measurable benefit over the default Kubernetes scheduler, principally through reduced placement on contended nodes. The contention reduction of 4~pp is the largest single-metric improvement and is attributable to the anomaly component (NSA), which signals elevated risk when node telemetry departs from learned normal patterns.
-
-The dominance of the prediction weight (0.9 versus 0.1 for anomaly) in the locked configuration suggests that predicted load is the primary scheduling signal, with anomaly risk acting as a corrective during stress periods. This is consistent with the per-phase results (Table~\ref{tab:ch5-per-phase}): the custom scheduler's advantage materialises during stress, where the anomaly signal is active, and disappears during normal operation, where the anomaly monitor produces low or zero risk scores.
-
-The adaptive weighting mechanism, which shifts the prediction/anomaly balance based on current risk level, is designed to amplify this stress-phase effect. The stress-phase placement improvement provides indirect evidence that the mechanism operates as intended, though isolating its contribution from the static weight configuration would require additional ablation experiments.
+This subsection will interpret whether the custom scheduler's benefit arises mainly from anomaly avoidance, contention avoidance, workload-aware capacity normalisation, or a combination of the three. The redesigned decision artifacts should make this interpretation more defensible than in the earlier Stage B path.
 
 
-\subsection{The Run~003 Reversal}
+\subsection{Scheduler Authority and Experimental Control}
 
-Run~003 is the only trial in which the custom scheduler performed worse than the default across all placement metrics. Several factors may explain this reversal:
-
-\begin{itemize}
-	\item \textbf{Cluster state drift.} Because the baseline and custom arms execute sequentially, residual resource pressure from the baseline arm's stress phase may persist into the custom arm's initial scheduling decisions. If this residual state differs across trials, it could occasionally disadvantage the custom arm.
-	\item \textbf{Marginal stress overlap.} The stress injection ($\texttt{stress --cpu 2 --timeout 240}$) has a fixed duration, but minor timing variations in pod submission could place some custom-arm pods in a different stress envelope than their matched baseline-arm counterparts.
-	\item \textbf{NSA warm-up.} The NSA monitor requires a history buffer to generate meaningful risk scores. If the monitor had not fully warmed up before stress-phase scheduling decisions in run~003, it may have produced attenuated or inverted risk estimates.
-\end{itemize}
-
-Without per-decision telemetry logs for run~003, it is not possible to determine which factor dominated. However, the reversal highlights an inherent limitation of matched-arm designs with sequential execution: perfect cluster-state matching between arms is not guaranteed.
+The final discussion will explicitly address the methodological significance of the redesigned online path: explicit warm-up, counterbalanced arm order, authoritative rank-and-pin binding, rotating stress targets, and per-decision logging. These design changes should be discussed not as implementation ornamentation, but as the reason the final online claim is stronger than the earlier scheduler-profile comparison.
 
 
 \subsection{Comparison with Related Work}
 
-Positioning these results within the literature reviewed in Chapters~\ref{chapter2} and \ref{chapter3} requires acknowledging that direct numerical comparison is not possible: related Kubernetes scheduling systems operate on different cluster hardware, workload profiles, and evaluation metrics.
-
-Fritzsche~et~al.~\cite{fritzsche2024lightweight} demonstrated that lightweight ML-based anomaly detection can operate effectively on edge hardware, achieving NSA precision of 1.00 and recall of 0.90--0.96 on similar K3s clusters. The present work extends this insight by integrating the NSA detector into a real-time scheduling loop, confirming that the detection quality reported offline translates to improved online placement decisions.
-
-Several recent works have applied reinforcement learning to Kubernetes scheduling. Song~et~al.~\cite{song2025dqks} proposed DQKS, a DDQN-based pluggable scheduler, and Pattan~\cite{pattan2025reinforcement} explored RL for distributed orchestration. These approaches are more expressive than the linear predictor used here, but they require online training episodes and reward shaping that are difficult to implement on small edge clusters with limited workload diversity. The present system's overhead of 33~ms per scheduling decision is substantially lighter than RL-based approaches that require neural network inference at each decision point.
-
-Liu~et~al.~\cite{liu2024dynamic} and Pashaeehir~et~al.~\cite{pashaeehir2025kubedsm} addressed dynamic scheduling in collaborative edge settings, while Rasouli~et~al.~\cite{rasouli2025false} focused on failure-aware scheduling for mission-critical edge applications. The present work shares their motivation (scheduling quality under resource pressure at the edge), but is distinguished by its explicit anomaly-detection integration and its use of a matched-arm experimental design for evaluation rather than simulation-only comparison.
-
-
-\subsection{Wider Issues}
-
-\textbf{Ethical considerations.} Automated scheduling decisions directly affect service availability and quality of service. A biased anomaly detector could systematically avoid certain nodes, creating resource unfairness. The fairness metric was tracked throughout the experiment (fairness delta was 0\% in four of five trials, with minor fluctuations in run~004) providing evidence that the current system does not introduce systematic node-level bias. However, this assurance is limited by the two-node cluster topology; fairness risks would increase with more heterogeneous deployments.
-
-\textbf{Legal and regulatory.} In production environments, scheduling decisions may fall under audit and compliance requirements, particularly for workloads handling personal data or operating in regulated sectors. The reproducibility package described in Chapter~\ref{chapter4} partially addresses this by preserving per-pod placement records, but a production deployment would require more comprehensive audit logging and decision explainability.
-
-\textbf{Social impact.} Edge computing increasingly supports latency-sensitive applications including healthcare monitoring, autonomous vehicle coordination, and industrial control systems. Improved scheduling under anomalous conditions could reduce service degradations that affect end users in these domains. However, over-reliance on automated scheduling without human oversight introduces risks if the anomaly detector mischaracterises normal operational variation as anomalous.
+Placeholder for the final positioning discussion. This section will relate the final results to the anomaly-detection replication evidence in Appendix~\ref{chapter2} and to the broader scheduling literature reviewed in Chapter~\ref{chapter1}, while acknowledging that direct numerical comparison across platforms remains limited.
 
 
 \subsection{Limitations}
 \label{sec:limitations}
 
-Several limitations constrain the strength of the conclusions drawn from this evaluation:
+Some limitations are already known before the final run:
 
 \begin{itemize}
-	\item \textbf{Cluster scale.} The two-worker K3s cluster provides only binary placement choices. With more nodes, the scheduler's ranking capability would be more meaningful, but the current evaluation cannot demonstrate scaling behaviour.
-	\item \textbf{Cloud VM edge proxy.} Google Cloud \texttt{e2-small} VMs approximate edge hardware but lack the hardware heterogeneity, network variability, and thermal constraints of physical edge devices.
-	\item \textbf{Synthetic stress injection.} The \texttt{stress} command produces deterministic CPU saturation, which is simpler and more predictable than organic failures such as disk I/O saturation, network partitioning, or cascading service degradation.
-	\item \textbf{Trial count.} Five trials are insufficient for robust statistical inference. The mean utility delta of $+2.0$ cannot be accompanied by a meaningful confidence interval at this sample size.
-	\item \textbf{Single cluster topology.} No multi-zone or heterogeneous node configurations were tested, limiting external validity.
-	\item \textbf{Linear predictor.} Ridge regression captures linear trends but may underfit during mixed-stress phases where RMSE was highest (0.111, Chapter~\ref{chapter4}). More expressive models such as LSTM or gradient boosting could improve accuracy during complex stress patterns.
-	\item \textbf{Manual utility weights.} The utility function weights (safe~0.45, anomalous~0.25, contention~0.15, latency~0.10, fairness~0.05) were manually specified based on domain reasoning rather than learned from data or operator preferences.
+\item the cluster is still modest relative to large production edge deployments
+\item the live experiment relies on controlled stress injection rather than organic failure cascades
+\item the offline replay surface does not reproduce every live execution refinement, especially the decision-time workload and capacity context
+\item the predictor remains a lightweight linear family that may underfit complex mixed-resource regimes
 \end{itemize}
+
+After the run, this subsection will be extended with any result-specific limitations that become visible in the final artifacts.
 
 
 \section{Conclusions}
 \label{sec:conclusions}
 
-This project investigated whether a lightweight, anomaly-aware scheduling pipeline could improve pod placement quality on an edge Kubernetes cluster compared to the default scheduler, while preserving low overhead and demonstrating that offline-selected parameters transfer to online deployment.
-
-\textbf{RQ1 (Scheduling quality).} The custom scheduler improved safe placement rate by 2~pp and reduced high contention rate by 4~pp on average across five matched-arm trials, supporting H1. The improvement is modest in magnitude but consistent in direction for the majority of trials.
-
-\textbf{RQ2 (Low overhead).} The mean scheduling latency overhead of 33~ms is negligible relative to 60-second pod lifetimes (0.06\%), and is fully compensated during stress phases by improved startup time from better placement. H2 is supported.
-
-\textbf{RQ3 (Offline-to-online transfer).} The mean utility delta of $+2.0$ and four of five positive trials provide evidence that offline-locked parameters transfer to online deployment. However, the single negative trial and the small sample size mean H3 is only partially supported.
-
-The principal contribution is a complete, reproducible pipeline, from telemetry collection through anomaly-aware scheduling evaluation, deployed and evaluated on a live K3s edge cluster with a matched-arm experimental design. The pipeline demonstrates that integrating a lightweight anomaly signal into Kubernetes scheduling is feasible on resource-constrained edge nodes, and that the benefit primarily manifests as reduced contention during stress events.
+Placeholder for the final experimental conclusion. The completed version will summarise the answer to RQ1--RQ3 using only the final matched-arm evidence and the locked offline support material described in Chapters~\ref{chapter3} and \ref{chapter4}.
 
 
 \section{Future Work}
 \label{sec:future-work}
 
-Several directions could strengthen and extend the findings:
+The final version of this section will be updated after the run, but the likely directions remain:
 
 \begin{itemize}
-	\item \textbf{Additional trials and larger clusters.} Increasing the trial count beyond five would enable meaningful confidence intervals. Adding a third worker node would expand the placement space and exercise the ranking algorithm more fully.
-
-	\item \textbf{Non-linear predictors.} Evaluating LSTM or gradient boosting models against the linear baseline could improve prediction accuracy during mixed-stress phases, where Ridge RMSE was highest at 0.111. The modular predictor interface (Chapter~\ref{chapter4}) supports drop-in model replacement without modifying the scheduler.
-
-	\item \textbf{Organic anomaly injection.} Replacing synthetic \texttt{stress} commands with realistic failure modes (disk I/O saturation, network partitioning, or cascading service degradation) would test whether the NSA detector generalises beyond the training distribution.
-
-	\item \textbf{Learned utility weights.} Bayesian optimisation or multi-objective search could tune the utility function weights from operator preferences or historical QoS data, removing the current reliance on manual specification.
-
-	\item \textbf{Native Kubernetes Scheduling Framework integration.} The current deployment runs a separate \texttt{kube-scheduler} instance. Implementing the scoring logic as a native Score plugin within the Kubernetes Scheduling Framework would reduce architectural complexity and potentially lower the 33~ms scheduling overhead by eliminating the second scheduler's leader election and network path.
+\item larger and more heterogeneous clusters
+\item additional trials for tighter uncertainty estimates
+\item more expressive predictors for mixed-resource regimes
+\item more realistic anomaly and failure injection
+\item deeper integration with native Kubernetes scheduling interfaces
 \end{itemize}
-

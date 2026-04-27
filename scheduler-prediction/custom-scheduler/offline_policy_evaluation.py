@@ -436,7 +436,7 @@ def evaluate_split(
     z_threshold: float,
     hybrid_pred_weight: float,
     protocol: Optional[Dict] = None,
-    anomaly_source: str = "zscore",
+    anomaly_source: str = "nsa",
     nsa_num_detectors: int = 120,
     nsa_radius: float = 0.9,
     kmeans_threshold_std: float = 2.0,
@@ -635,7 +635,7 @@ def evaluate_runwise_hybrid_consistency(
     z_threshold: float,
     hybrid_pred_weight: float,
     protocol: Dict,
-    anomaly_source: str = "zscore",
+    anomaly_source: str = "nsa",
     nsa_num_detectors: int = 120,
     nsa_radius: float = 0.9,
     kmeans_threshold_std: float = 2.0,
@@ -695,7 +695,9 @@ def evaluate_runwise_hybrid_consistency(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Offline paired evaluation for prediction/anomaly/hybrid policies")
+    parser = argparse.ArgumentParser(
+        description="Offline paired evaluation aligned by default to the locked final live policy family"
+    )
     parser.add_argument("--runs-dir", required=True, help="Path to anomaly-detection/online-telemetry/dataset/runs")
     parser.add_argument("--model-dir", required=True, help="Path to trained predictor models")
     parser.add_argument("--output", required=True, help="Path to JSON summary output")
@@ -704,14 +706,14 @@ def main() -> None:
     parser.add_argument("--validation-runs", nargs="*", default=None)
     parser.add_argument("--test-runs", nargs="*", default=None)
     parser.add_argument("--window", type=int, default=None)
-    parser.add_argument("--warmup", type=int, default=15)
+    parser.add_argument("--warmup", type=int, default=24)
     parser.add_argument("--anomaly-history", type=int, default=45)
-    parser.add_argument("--anomaly-source", choices=["zscore", "nsa", "kmeans"], default="zscore")
+    parser.add_argument("--anomaly-source", choices=["zscore", "nsa", "kmeans"], default="nsa")
     parser.add_argument("--nsa-num-detectors", type=int, default=120)
     parser.add_argument("--nsa-radius", type=float, default=0.9)
     parser.add_argument("--kmeans-threshold-std", type=float, default=2.0)
-    parser.add_argument("--weight-grid", default="0.5,0.6,0.7,0.8,0.9")
-    parser.add_argument("--z-grid", default="2.0,2.5,3.0,3.5")
+    parser.add_argument("--weight-grid", default="0.9")
+    parser.add_argument("--z-grid", default="2.5")
     args = parser.parse_args()
 
     protocol = load_protocol(args.protocol)

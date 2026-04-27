@@ -1,0 +1,77 @@
+{
+  "best_node": "k3s-worker-2",
+  "workload_request": {
+    "cpu_millicores": 250.0,
+    "memory_mib": 64.0
+  },
+  "capacity_penalty_factor": 1.0,
+  "node_capacities": {
+    "k3s-worker-2": {
+      "cpu_millicores": 2000.0,
+      "memory_mib": 1964.9023
+    },
+    "k3s-worker-3": {
+      "cpu_millicores": 2000.0,
+      "memory_mib": 1964.9062
+    },
+    "k3s-worker-4": {
+      "cpu_millicores": 2000.0,
+      "memory_mib": 1964.9102
+    },
+    "raspberrypi": {
+      "cpu_millicores": 4000.0,
+      "memory_mib": 4045.6875
+    }
+  },
+  "ranking": [
+    {
+      "node": "k3s-worker-2",
+      "total_score": 0.2998,
+      "predicted_load": 0.3331,
+      "base_predicted_load": 0.2081,
+      "anomaly_risk": 0.0,
+      "cpu_request_fraction": 0.125,
+      "memory_request_fraction": 0.0326,
+      "capacity_penalty": 0.125,
+      "prediction_source": "model"
+    },
+    {
+      "node": "k3s-worker-3",
+      "total_score": 0.4771,
+      "predicted_load": 0.5301,
+      "base_predicted_load": 0.4051,
+      "anomaly_risk": 0.0,
+      "cpu_request_fraction": 0.125,
+      "memory_request_fraction": 0.0326,
+      "capacity_penalty": 0.125,
+      "prediction_source": "model"
+    },
+    {
+      "node": "raspberrypi",
+      "total_score": 0.6525,
+      "predicted_load": 0.725,
+      "base_predicted_load": 0.6625,
+      "anomaly_risk": 0.0,
+      "cpu_request_fraction": 0.0625,
+      "memory_request_fraction": 0.0158,
+      "capacity_penalty": 0.0625,
+      "prediction_source": "fallback"
+    },
+    {
+      "node": "k3s-worker-4",
+      "total_score": 0.6817,
+      "predicted_load": 0.7575,
+      "base_predicted_load": 0.6325,
+      "anomaly_risk": 0.0,
+      "cpu_request_fraction": 0.125,
+      "memory_request_fraction": 0.0326,
+      "capacity_penalty": 0.125,
+      "prediction_source": "fallback"
+    }
+  ],
+  "weights": {
+    "prediction": 0.9,
+    "anomaly": 0.1
+  },
+  "anomaly_source": "nsa"
+}

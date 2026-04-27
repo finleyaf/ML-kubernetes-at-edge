@@ -20,7 +20,7 @@ fi
 
 ZONE="${ZONE:-europe-west2-c}"
 CONTROL_NODE="${CONTROL_NODE:-k3s-control}"
-NODES="${NODES:-k3s-control k3s-worker-2 k3s-worker-3}"
+NODES="${NODES:-k3s-control k3s-worker-2 k3s-worker-3 k3s-worker-4 raspberrypi}"
 NETDATA_BASE_URL="${NETDATA_BASE_URL:-http://localhost:20000}"
 VENV_PATH="${VENV_PATH:-.venv}"
 

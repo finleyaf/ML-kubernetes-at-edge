@@ -23,6 +23,27 @@ parser.add_argument(
     default=1.25,
     help="Relative CPU threshold above which a placement is marked anomalous",
 )
+parser.add_argument("--arm", default="", help="Experiment arm label")
+parser.add_argument("--arm-order", default="", help="Arm execution order within the matched pair")
+parser.add_argument("--trial", default="", help="Trial index for the decision")
+parser.add_argument("--phase-name", default="", help="Phase label for this decision")
+parser.add_argument("--phase-kind", default="", help="Phase kind such as normal or stress")
+parser.add_argument("--stress-profile", default="", help="Stress profile active during the decision")
+parser.add_argument("--stress-target", default="", help="Node targeted by the stress workload")
+parser.add_argument("--decision-mode", default="", help="How the placement decision was produced")
+parser.add_argument("--expected-node", default="", help="Expected chosen node for authoritative custom decisions")
+parser.add_argument("--snapshot-path", default="", help="Telemetry snapshot path used for the decision")
+parser.add_argument("--ranking-path", default="", help="Ranking JSON path used for the decision")
+parser.add_argument("--workload-cpu-m", default="", help="Requested workload CPU in millicores")
+parser.add_argument("--workload-memory-mib", default="", help="Requested workload memory in MiB")
+parser.add_argument("--decision-total-score", default="", help="Chosen node total score from the ranking engine")
+parser.add_argument("--decision-predicted-load", default="", help="Projected load score used by the ranking engine")
+parser.add_argument("--decision-base-predicted-load", default="", help="Base predictor or fallback load before workload penalty")
+parser.add_argument("--decision-anomaly-risk", default="", help="Chosen node anomaly risk from the ranking engine")
+parser.add_argument("--decision-cpu-request-fraction", default="", help="Workload CPU fraction relative to chosen node capacity")
+parser.add_argument("--decision-memory-request-fraction", default="", help="Workload memory fraction relative to chosen node capacity")
+parser.add_argument("--decision-capacity-penalty", default="", help="Capacity penalty applied during ranking")
+parser.add_argument("--decision-prediction-source", default="", help="Whether the chosen node used a trained model or fallback load")
 args = parser.parse_args()
 
 
@@ -47,6 +68,8 @@ def parse_cpu_cores(raw):
     s = str(raw).strip().lower()
     if not s:
         return None
+    if s in {"<unknown>", "unknown", "n/a", "none", "nan"}:
+        return None
     if s.endswith("m"):
         return float(s[:-1]) / 1000.0
     return float(s)
@@ -56,9 +79,25 @@ def parse_cpu_percent(raw):
     s = str(raw).strip().lower()
     if not s:
         return None
+    if s in {"<unknown>", "unknown", "n/a", "none", "nan"}:
+        return None
     if s.endswith("%"):
         return float(s[:-1])
     return float(s)
+
+
+def parse_optional_float(raw):
+    s = str(raw).strip()
+    if not s:
+        return None
+    return float(s)
+
+
+def parse_optional_int(raw):
+    s = str(raw).strip()
+    if not s:
+        return None
+    return int(s)
 
 
 def get_node_cpu_snapshot():
@@ -179,7 +218,41 @@ def collect_pod_metrics(pod_name, timeout):
             high_contention = 1 if chosen_relative_cpu >= args.contention_relative_cpu_threshold else 0
             chosen_label = 1 if chosen_relative_cpu >= args.anomaly_relative_cpu_threshold else 0
 
+    expected_node = str(args.expected_node).strip()
+    stress_target = str(args.stress_target).strip()
+
+    expected_node_match = None
+    if expected_node:
+        expected_node_match = 1 if node == expected_node else 0
+
+    placed_on_stress_target = None
+    if stress_target:
+        placed_on_stress_target = 1 if node == stress_target else 0
+
     return {
+        "arm": str(args.arm).strip() or None,
+        "arm_order": parse_optional_int(args.arm_order),
+        "trial": parse_optional_int(args.trial),
+        "phase_name": str(args.phase_name).strip() or None,
+        "phase_kind": str(args.phase_kind).strip() or None,
+        "stress_profile": str(args.stress_profile).strip() or None,
+        "stress_target": stress_target or None,
+        "decision_mode": str(args.decision_mode).strip() or None,
+        "expected_node": expected_node or None,
+        "expected_node_match": expected_node_match,
+        "placed_on_stress_target": placed_on_stress_target,
+        "snapshot_path": str(args.snapshot_path).strip() or None,
+        "ranking_path": str(args.ranking_path).strip() or None,
+        "workload_cpu_m": parse_optional_float(args.workload_cpu_m),
+        "workload_memory_mib": parse_optional_float(args.workload_memory_mib),
+        "decision_total_score": parse_optional_float(args.decision_total_score),
+        "decision_predicted_load": parse_optional_float(args.decision_predicted_load),
+        "decision_base_predicted_load": parse_optional_float(args.decision_base_predicted_load),
+        "decision_anomaly_risk": parse_optional_float(args.decision_anomaly_risk),
+        "decision_cpu_request_fraction": parse_optional_float(args.decision_cpu_request_fraction),
+        "decision_memory_request_fraction": parse_optional_float(args.decision_memory_request_fraction),
+        "decision_capacity_penalty": parse_optional_float(args.decision_capacity_penalty),
+        "decision_prediction_source": str(args.decision_prediction_source).strip() or None,
         "pod_name": pod_name,
         "workload_type": workload_type,
         "node": node,

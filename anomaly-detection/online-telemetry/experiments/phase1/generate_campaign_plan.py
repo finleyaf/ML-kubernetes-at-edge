@@ -4,10 +4,16 @@ import os
 import random
 from datetime import datetime, timezone
 
+DEFAULT_WORKER_TARGETS = [
+    "k3s-worker-2",
+    "k3s-worker-3",
+    "k3s-worker-4",
+    "raspberrypi",
+]
+
 STRESS_LIBRARY = [
     {
         "name": "cpu",
-        "target": "k3s-worker-2",
         "profiles": [
             {"id": "low", "command": "stress --cpu 1 --timeout {duration}"},
             {"id": "medium", "command": "stress --cpu 2 --timeout {duration}"},
@@ -16,7 +22,6 @@ STRESS_LIBRARY = [
     },
     {
         "name": "memory",
-        "target": "k3s-control",
         "profiles": [
             {"id": "low", "command": "stress --vm 1 --vm-bytes 512M --timeout {duration}"},
             {"id": "medium", "command": "stress --vm 1 --vm-bytes 1G --timeout {duration}"},
@@ -25,7 +30,6 @@ STRESS_LIBRARY = [
     },
     {
         "name": "io",
-        "target": "k3s-worker-2",
         "profiles": [
             {"id": "low", "command": "stress --io 2 --timeout {duration}"},
             {"id": "medium", "command": "stress --io 4 --timeout {duration}"},
@@ -34,7 +38,6 @@ STRESS_LIBRARY = [
     },
     {
         "name": "mixed",
-        "target": "k3s-worker-3",
         "profiles": [
             {"id": "low", "command": "stress --cpu 1 --vm 1 --vm-bytes 256M --timeout {duration}"},
             {"id": "medium", "command": "stress --cpu 1 --vm 1 --vm-bytes 512M --timeout {duration}"},
@@ -44,7 +47,13 @@ STRESS_LIBRARY = [
 ]
 
 
-def build_run(run_idx, is_control, baseline_s, recovery_s, duration_options, rng):
+def stress_target_for(worker_targets, run_idx, event_idx):
+    if not worker_targets:
+        raise ValueError("worker_targets must contain at least one worker node")
+    return worker_targets[(run_idx + event_idx) % len(worker_targets)]
+
+
+def build_run(run_idx, is_control, baseline_s, recovery_s, duration_options, worker_targets, rng):
     run_id = f"run_{run_idx:03d}"
     phases = [
         {"type": "baseline", "name": "baseline", "duration": baseline_s},
@@ -54,14 +63,14 @@ def build_run(run_idx, is_control, baseline_s, recovery_s, duration_options, rng
         events = STRESS_LIBRARY.copy()
         rng.shuffle(events)
 
-        for event in events:
+        for event_idx, event in enumerate(events):
             duration = rng.choice(duration_options)
             profile = rng.choice(event["profiles"])
             phases.append(
                 {
                     "type": "stress",
                     "name": event["name"],
-                    "target": event["target"],
+                    "target": stress_target_for(worker_targets, run_idx - 1, event_idx),
                     "intensity": profile["id"],
                     "duration": duration,
                     "command": profile["command"].format(duration=duration),
@@ -86,11 +95,19 @@ def main():
     parser.add_argument("--recovery", type=int, default=120, help="Recovery duration in seconds")
     parser.add_argument("--durations", nargs="+", type=int, default=[90, 120, 150], help="Stress durations to sample")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
+    parser.add_argument(
+        "--worker-targets",
+        nargs="+",
+        default=DEFAULT_WORKER_TARGETS,
+        help="Worker nodes eligible for targeted stress phases",
+    )
     parser.add_argument("--output", required=True, help="Path to save campaign plan JSON")
     args = parser.parse_args()
 
     if not (0.0 <= args.control_ratio <= 1.0):
         raise ValueError("--control-ratio must be between 0 and 1")
+    if not args.worker_targets:
+        raise ValueError("--worker-targets must contain at least one worker node")
 
     rng = random.Random(args.seed)
     run_count = args.runs
@@ -99,9 +116,9 @@ def main():
 
     runs = []
     for i in range(1, stress_count + 1):
-        runs.append(build_run(i, False, args.baseline, args.recovery, args.durations, rng))
+        runs.append(build_run(i, False, args.baseline, args.recovery, args.durations, args.worker_targets, rng))
     for i in range(stress_count + 1, run_count + 1):
-        runs.append(build_run(i, True, args.baseline, args.recovery, args.durations, rng))
+        runs.append(build_run(i, True, args.baseline, args.recovery, args.durations, args.worker_targets, rng))
 
     rng.shuffle(runs)
 
@@ -116,6 +133,7 @@ def main():
             "baseline": args.baseline,
             "recovery": args.recovery,
             "durations": args.durations,
+            "worker_targets": args.worker_targets,
         },
         "runs": runs,
     }

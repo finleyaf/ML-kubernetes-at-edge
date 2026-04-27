@@ -1,229 +1,143 @@
 \chapter{Implementation and Validation}
 \label{chapter4}
 
-
 \section{Implementation}
 
-This section describes the software implementation of each pipeline stage, providing design justifications and evidence of correct operation. All components are implemented in Python~3 with scikit-learn for model fitting and NumPy for numerical operations. Kubernetes interaction uses \texttt{kubectl} invocations and the Kubernetes API.
-
+This chapter describes the implemented system that supports the final methodology in Chapter~\ref{chapter3}. The emphasis is on the components that are actually on the execution path of the final experiment, rather than on historical alternatives retained in the repository.
 
 \subsection{Predictor Training Pipeline}
 
-The predictor training pipeline (\texttt{train\_predictor.py}) produces per-node regression models from phase-labelled telemetry. The key implementation decisions are described below.
+The predictor training pipeline (\texttt{train\_predictor.py}) produces per-node regression models from phase-labelled telemetry. The core implementation choices are:
 
-\subsubsection{Leakage-Safe Scaling}
+\begin{itemize}
+\item \textbf{Leakage-safe scaling.} A temporal split is applied before fitting the scaler, so future statistics cannot influence training features.
+\item \textbf{Phase-aware sample weighting.} CPU and mixed stress targets receive higher sample weight because prediction quality during stressed operation is more important than during quiescent operation.
+\item \textbf{Post-fit calibration.} Per-feature affine correction is learned on a calibration tail of the training data and applied at inference time.
+\item \textbf{Artifact traceability.} Each model directory stores per-node model bundles, scalers, and a \texttt{training\_summary.json} with split sizes and error metrics.
+\end{itemize}
 
-To prevent future information from influencing model fitting, the scaler is fitted exclusively on the training portion of the time series before transforming the full sequence:
-
-\begin{enumerate}
-	\item A temporal 80/20 split is applied to the raw (unscaled) node sequence.
-	\item A \texttt{MinMaxScaler} is fitted on the first 80\% of rows only.
-	\item The fitted scaler transforms the entire sequence, so that sliding windows crossing the split boundary use consistent scaling without leaking test-period statistics into training.
-\end{enumerate}
-
-This ordering is critical: fitting the scaler on the full sequence would allow test-period minima and maxima to shift training features, producing optimistically low error estimates.
-
-\subsubsection{Phase-Aware Sample Weighting}
-
-Training samples are weighted by stress phase to counteract class imbalance between baseline and stress periods. Samples whose target falls in a CPU stress phase receive weight 2.0; mixed stress phases receive weight 1.5; all others receive weight 1.0. These weights are passed to the scikit-learn \texttt{fit()} method via the \texttt{sample\_weight} parameter. The rationale is that scheduling decisions during stress are the most consequential, so prediction accuracy during those periods should be prioritised.
-
-\subsubsection{Post-Fit Calibration}
-
-After model fitting, a calibration step corrects systematic prediction bias. The training data is further split: the first 80\% is used for model fitting and the remaining 20\% (the calibration tail) is held back. On this calibration set, per-feature affine coefficients are estimated via least-squares:
-
-\[
-\hat{y}' = \alpha \hat{y} + \beta
-\]
-
-where $\alpha$ and $\beta$ are fitted per feature using \texttt{numpy.polyfit}. Features with fewer than 5 calibration samples or near-zero variance retain identity mapping ($\alpha=1, \beta=0$). At inference time, all predictions pass through this calibration before clipping to $[0, 1]$.
-
-\subsubsection{Model Serialisation}
-
-Each trained model is saved as a pickle bundle containing the fitted sklearn model, calibration coefficients ($\alpha$, $\beta$ arrays), window size, horizon, and feature list. The scaler is saved separately as \texttt{scaler\_\{node\}.pkl}. A \texttt{training\_summary.json} records per-node sample counts, train/test split sizes, MAE, RMSE, training time, and inference time, providing a traceable record of each training run.
+These choices are designed to keep inference lightweight while preserving the temporal discipline needed for an honest downstream scheduler evaluation.
 
 
 \subsection{Runtime Predictor}
 
-The runtime predictor (\texttt{predictor.py}) provides the inference interface consumed by the hybrid scheduler. Two classes implement the design:
+The runtime predictor in \texttt{predictor.py} provides the inference interface consumed by the live ranker. \texttt{NodePredictor} manages a per-node sliding buffer, while \texttt{ClusterPredictor} aggregates all worker-specific predictors and exposes cluster-wide prediction.
+
+The scalar predicted-load score is a weighted combination of CPU, RAM, and network forecasts, with CPU and memory receiving the highest weight. Two implementation details are particularly important for the final online experiment:
 
 \begin{itemize}
-	\item \texttt{NodePredictor}: manages a per-node sliding buffer, loads the model bundle and scaler from disk, and exposes \texttt{update()}, \texttt{ready()}, and \texttt{predict()} methods. Each call to \texttt{predict()} scales the current window via the saved scaler, runs the model, applies calibration, and clips the output to $[0, 1]$.
-	\item \texttt{ClusterPredictor}: aggregates \texttt{NodePredictor} instances for all worker nodes and exposes \texttt{predict\_all()} and \texttt{rank\_nodes()} for cluster-wide ranking.
+\item \textbf{Warm-start fallback.} Until the sliding window is full, the ranker falls back to a bounded load estimate derived from current observations.
+\item \textbf{Missing-artifact fallback.} If a node does not have a trained model bundle, the cluster predictor records it as a fallback-only node rather than failing the entire ranking path.
 \end{itemize}
 
-The \texttt{predicted\_load()} method converts per-feature predictions into a scalar load score using a weighted combination:
-
-\[
-\text{load} = 0.4 \cdot \min(\text{cpu\_user} + \text{cpu\_system},\, 1) + 0.4 \cdot \text{ram\_used} + 0.2 \cdot \min(\text{net\_received} + \text{net\_sent},\, 1)
-\]
-
-The weights reflect the relative importance of CPU and memory for scheduling on resource-constrained edge nodes, with network as a secondary signal. Until the sliding window fills (warm-start period), the predictor returns \texttt{None} and the scheduler falls back to a bounded estimate from current observations using the same weighting formula.
+This fallback behaviour is necessary for the expanded heterogeneous cluster, where model coverage may lag behind topology changes.
 
 
 \subsection{Anomaly Monitors}
 
-The anomaly monitor implementation in \texttt{hybrid\_scheduler.py} conforms to an \texttt{update()}/\texttt{ready()}/\texttt{risk()} interface. Based on the replication evidence in Chapter~\ref{chapter2}, which demonstrated NSA's consistently superior detection performance over K-means on real cluster telemetry (F1 0.946--0.980 versus 0.000--0.638), NSA was adopted as the sole anomaly source for the deployed scheduler.
+The anomaly-monitor implementation in \texttt{hybrid\_scheduler.py} conforms to a common \texttt{update()}/\texttt{ready()}/\texttt{risk()} interface. Based on the replication evidence in Appendix~\ref{chapter2}, NSA was retained as the deployed anomaly source.
 
-\begin{itemize}
-	\item \textbf{NSA Monitor.} Estimates self-space from recent history by computing mean and standard deviation per feature. Detectors are randomly sampled in the normalised feature space, rejecting candidates that fall within the self-radius of any historical observation. At inference, risk is $r = 1 / (1 + e^{5(d_{\min} - \rho)})$ where $d_{\min}$ is the Euclidean distance to the nearest detector and $\rho$ is the configured radius. A fallback detector is generated if the self-space is too compact to reject all candidates.
-\end{itemize}
-
-A factory function \texttt{build\_anomaly\_monitor()} instantiates the configured source by name. The codebase also retains z-score and K-means monitor implementations for potential future use, but these were not deployed.
+The NSA monitor estimates node-local \textit{self} behaviour from recent history and samples detectors in non-self regions. At inference time, risk is obtained from nearest-detector distance through a bounded logistic mapping. The codebase retains z-score and K-means monitors for completeness, but the final report treats these as alternative implementations rather than as deployed components.
 
 
 \subsection{Hybrid Scheduler Engine}
 
-The \texttt{HybridScheduler} class orchestrates prediction and anomaly monitoring into a single node-ranking decision. Its constructor accepts configurable parameters for weights, anomaly source, adaptive weighting bounds, and NSA detector budget. Key implementation details:
+The \texttt{HybridScheduler} class combines prediction and anomaly monitoring into a single ranking decision. It now exposes several behaviours that matter directly to the final online protocol:
 
 \begin{itemize}
-	\item \textbf{Weight validation.} The constructor enforces $w_p + w_a = 1.0$ and $\text{risk\_low} < \text{risk\_high}$ at initialisation, raising \texttt{ValueError} on misconfiguration.
-	\item \textbf{Adaptive weighting.} When enabled, the effective prediction weight is shifted by up to $\pm 0.35$ based on the current anomaly risk. Below risk 0.2, the full positive shift is applied (favouring prediction); above risk 0.7, the full negative shift (favouring anomaly). Between these thresholds, shift is linearly interpolated. The result is clipped to $[0.05, 0.95]$ to prevent either signal from being entirely ignored.
-	\item \textbf{Scoring.} \texttt{score\_nodes()} calls \texttt{predict\_all()} and each monitor's \texttt{risk()}, computes the weighted score per node, and returns a list of \texttt{NodeScore} dataclass instances sorted ascending by total score. \texttt{choose\_node()} returns the first element (lowest score).
+\item \textbf{Fixed or adaptive weights.} The engine supports either fixed prediction/anomaly weights or anomaly-risk-dependent reweighting.
+\item \textbf{Workload-aware capacity pressure.} Each candidate node can receive an additive capacity penalty derived from the workload request and the node's allocatable CPU and memory.
+\item \textbf{Prediction provenance.} The returned \texttt{NodeScore} records whether the chosen node used a trained model or a fallback estimate.
+\item \textbf{Decision diagnostics.} The returned score structure includes base predicted load, projected load, anomaly risk, request fractions, and capacity penalty.
 \end{itemize}
 
-
-\subsection{Offline Policy Evaluation}
-
-The offline policy evaluation (\texttt{offline\_policy\_evaluation.py}) implements the grid search described in Chapter~\ref{chapter3}. The implementation enforces strict stage separation:
-
-\begin{itemize}
-	\item \textbf{Selection stage.} Iterates the prediction weight grid. For each configuration, three scheduler instances (prediction-only, anomaly-only, hybrid) replay identical decision sequences on development runs. Utility is computed from the protocol-defined weighted formula. The best configuration is selected by utility score with tie-breakers on safe rate, anomalous count, and latency. Selection never reads or writes holdout metrics.
-	\item \textbf{Audit stage.} Loads the locked configuration from the selection output and evaluates it on the strict holdout runs only. A run-wise consistency check validates that a configurable fraction of individual runs show non-negative hybrid advantage, producing a \texttt{passed: bool} flag.
-\end{itemize}
-
-This two-stage design is a direct implementation of the methodological separation described in Section~\ref{sec:offline-selection}, ensuring that holdout data cannot influence parameter selection.
+This is the critical implementation change separating the final live ranker from the earlier replay-only formulation: the final online score is workload-aware and heterogeneity-aware at decision time.
 
 
-\subsection{Custom Scheduler Kubernetes Deployment}
+\subsection{Offline Replay Audit}
 
-The custom scheduler is deployed as a second \texttt{kube-scheduler} instance alongside the default scheduler on the K3s control node. The deployment manifest (\texttt{custom-rank-scheduler.yaml}) defines:
+The offline replay evaluator (\texttt{offline\_policy\_evaluation.py}) remains in the repository, but for the final report it is treated as a locked replay audit rather than as a broad search engine. The defaults were aligned to the final live policy family: warm-up 24, anomaly history 45, NSA source, prediction weight 0.9, anomaly weight 0.1, and the same detector budget used online.
 
-\begin{itemize}
-	\item A \texttt{ServiceAccount} with RBAC bindings granting \texttt{system:kube-scheduler} permissions plus read access to storage classes and config maps.
-	\item A \texttt{ConfigMap} containing a \texttt{KubeSchedulerConfiguration} (API version \texttt{kubescheduler.config.k8s.io/v1}) with a single profile named \texttt{custom-rank-scheduler} and leader election configured to use a dedicated resource lock.
-	\item A single-replica \texttt{Deployment} using the \texttt{registry.k8s.io/kube-scheduler:v1.30.0} image with \texttt{hostNetwork: true} and \texttt{system-cluster-critical} priority class.
-\end{itemize}
+This keeps the offline surface methodologically consistent with the final live family while avoiding the need to claim that every live execution refinement was selected in offline replay. The offline stage therefore supports detector choice, predictor adequacy, and locked-family replay audit; it does not replace the final online evaluation.
 
-Pods are routed to this scheduler by setting \texttt{spec.schedulerName: custom-rank-scheduler} in their manifest. The default scheduler continues to handle all pods without this annotation.
+
+\subsection{Authoritative Custom Decision Path}
+
+The final online comparison does not rely on a second deployed scheduler profile to attribute decisions to the custom policy. Instead, the authoritative path is implemented directly in the runner:
+
+\begin{enumerate}
+\item export live allocatable node capacities from the cluster
+\item seed the custom arm with 24 warm-up telemetry samples
+\item capture a one-shot snapshot immediately before each custom decision
+\item append that snapshot to the custom history
+\item invoke \texttt{rank\_live.py} using the locked predictor and NSA configuration, the workload request, and the exported node capacities
+\item persist the ranking JSON for later audit
+\item bind the pod authoritatively by writing the chosen node into \texttt{spec.nodeName}
+\end{enumerate}
+
+This design ensures that the evaluated custom-arm decision is produced by the implemented Python ranker itself. A historical Kubernetes scheduler manifest remains in the repository, but it is not the authority path used for the final dissertation claim.
+
 
 \subsection{Online Experiment Orchestration}
 
-The matched-arm experiment is orchestrated by \texttt{run\_stage\_b\_matched\_arms.sh}. For each trial, the script:
+The final online experiment is orchestrated by \texttt{run\_stage\_b\_authoritative\_rank\_and\_pin.sh}, which is invoked through the historical entry point \texttt{run\_stage\_b\_matched\_arms.sh}. The runner is responsible for:
 
-\begin{enumerate}
-	\item Executes a baseline arm: deploys pods with \texttt{schedulerName: default-scheduler} through normal and stress phases.
-	\item Executes a custom arm: deploys identical pods with \texttt{schedulerName: custom-rank-scheduler} through the same phase sequence.
-	\item For each pod, calls \texttt{collect\_scheduling\_metrics.py} to record scheduling latency (creation to \texttt{Scheduled} event), startup time (\texttt{Scheduled} to \texttt{Ready}), node placement, and resource snapshots via \texttt{kubectl top nodes}.
-	\item Applies per-pod labels: anomaly label if the placed node's relative CPU exceeds 1.25, high-contention flag if it exceeds 1.1.
-	\item Calls \texttt{analyse\_stage\_b\_results.py} to produce per-trial summary JSONs with utility components.
-\end{enumerate}
+\begin{itemize}
+\item exporting node capacities at the start of the run
+\item seeding and maintaining the custom telemetry history
+\item counterbalancing arm order by trial
+\item rotating stress profiles (CPU, memory, mixed) and stress targets across the worker set
+\item extracting workload requests from the pod manifests
+\item collecting enriched per-decision metrics and metadata
+\item producing redesigned summary output through \texttt{analyse\_stage\_b\_redesigned\_results.py}
+\end{itemize}
 
-Inter-pod spacing (4-second readiness wait, 2-second cleanup delay) is enforced to isolate scheduling decisions. Cross-trial aggregation is performed by \texttt{summarize\_stage\_b\_trials.py}, which computes mean deltas and identifies the largest regression bucket across phases and workload types.
+As a result, the final Stage B artifacts include not only baseline and custom scheduling CSVs, but also decision snapshots, ranking JSONs, node-capacity exports, run metadata, and a redesigned summary JSON.
 
 
 \section{Validation and Threats to Validity}
 
-This section reports validation evidence for each pipeline component, assesses threats to validity, and documents reproducibility provisions.
-
 \subsection{Predictor Validation}
 
-\subsubsection{Rolling-Origin Cross-Validation}
+Predictor selection was performed by rolling-origin cross-validation on the development corpus and confirmed on a strict holdout split. The \((w{=}5, h{=}3)\) configuration remained the best RMSE trade-off against naive baselines, which justified retaining the lightweight linear family for live scheduling.
 
-Model selection was performed using rolling-origin cross-validation on the first-phase development runs (16 runs, 8 folds). The implementation in \texttt{validate\_prediction.py} trains on chronologically earlier runs and evaluates on later runs, preventing temporal leakage across folds. Three model types were evaluated: linear regression, naive-last (persistence forecast), and naive-mean (window average). Table~\ref{tab:ch3-predictor-cv} in Chapter~\ref{chapter3} reports the results: the $(w{=}5, h{=}3)$ linear configuration achieved the lowest RMSE of 0.078 $[0.060, 0.095]$.
+The final trained artifact also produced comparable error across worker nodes, which supports using a common scoring surface across the live cluster rather than tuning separate policies per node.
 
-\subsubsection{Holdout Confirmation}
 
-The strict holdout split (4 runs: \texttt{run\_014}, \texttt{run\_015}, \texttt{run\_019}, \texttt{run\_020}) was withheld from all development decisions. Table~\ref{tab:ch4-holdout} reports holdout metrics across 1{,}438 predictions per model. The linear model confirms its RMSE advantage over both naive baselines, validating the CV-based selection.
+\subsection{Offline Replay Validation}
 
-\begin{table}[h]
-	\centering
-	\begin{tabular}{lrrr}
-		\hline
-		\textbf{Model} & \textbf{MAE} & \textbf{RMSE} & \textbf{sMAPE (\%)} \\
-		\hline
-		Linear & 0.035 & 0.084 & 32.2 \\
-		Naive-last & 0.036 & 0.102 & 29.9 \\
-		Naive-mean & 0.036 & 0.094 & 28.4 \\
-		\hline
-	\end{tabular}
-	\caption{Strict holdout evaluation (4 runs, 1{,}438 predictions). Linear RMSE confirms CV selection.}
-	\label{tab:ch4-holdout}
-\end{table}
+The offline replay path was validated as a locked audit surface aligned to the final live family. This alignment matters because the dissertation no longer relies on an expansive offline search narrative. The replay stage now supports the claim that the chosen hybrid family remains preferable to simpler baselines on historical telemetry, while the final online experiment remains the authoritative placement comparison.
 
-\subsubsection{Phase-Disaggregated Accuracy}
 
-Table~\ref{tab:ch4-phase-metrics} reports holdout accuracy broken down by stress phase. Baseline phases are predicted most accurately (RMSE 0.042); CPU and mixed stress phases show higher error (RMSE 0.089 and 0.111 respectively), consistent with the greater signal volatility during stress injection. This disaggregation confirms that phase-aware weighting during training is justified.
+\subsection{Online Pipeline Readiness Validation}
 
-\begin{table}[h]
-	\centering
-	\begin{tabular}{lrrr}
-		\hline
-		\textbf{Phase} & \textbf{Predictions} & \textbf{MAE} & \textbf{RMSE} \\
-		\hline
-		Baseline & 394 & 0.018 & 0.042 \\
-		CPU stress & 96 & 0.046 & 0.089 \\
-		Mixed stress & 260 & 0.058 & 0.111 \\
-		\hline
-	\end{tabular}
-	\caption{Holdout predictor accuracy by stress phase. Higher error during stress phases reflects greater signal volatility.}
-	\label{tab:ch4-phase-metrics}
-\end{table}
-
-\subsubsection{Training Artifact Verification}
-
-Each training run produces a \texttt{training\_summary.json} recording sample counts, split sizes, and per-node metrics. For the final deployed model (Ridge, $\alpha=1.0$, trained on the full 36-run development corpus):
+Before executing the final matched-arm experiment, the following readiness checks were completed:
 
 \begin{itemize}
-	\item \textbf{Worker-2:} 5{,}688 samples (4{,}549 train / 1{,}139 test), MAE $= 0.057$, RMSE $= 0.102$.
-	\item \textbf{Worker-3:} 5{,}687 samples (4{,}548 train / 1{,}139 test), MAE $= 0.057$, RMSE $= 0.108$.
+\item \textbf{Runner validation.} Shell syntax checks passed for the redesigned Stage B runners.
+\item \textbf{Python validation.} \texttt{py\_compile} passed for the changed ranking, replay, and orchestration modules.
+\item \textbf{Ranking smoke checks.} Synthetic validation confirmed that \texttt{rank\_live.py} runs successfully with missing-model fallback behaviour enabled.
+\item \textbf{Analysis smoke checks.} The redesigned summary script ran successfully on an existing smoke dataset, and the legacy analysis entry point was reduced to a compatibility wrapper.
+\item \textbf{Artifact readiness.} The online collector, metric logger, and analysis scripts now accept and preserve the extra fields required for per-decision telemetry audit.
 \end{itemize}
 
-The comparable error across both workers indicates that the training pipeline generalises consistently across nodes and that no single node dominates the aggregate metrics.
+These checks establish pipeline readiness, not final experimental success. Final data-integrity results will be reported only after the authoritative matched-arm run has been executed.
 
 
-\subsection{Offline Policy Selection Validation}
+\subsection{Online Experiment Data Integrity}\label{sec:online-integrity-placeholder}
 
-\subsubsection{Grid Search Outcome}
-
-The grid search over $w_p \in \{0.5, 0.6, 0.7, 0.8, 0.9\}$ on the 36-run development corpus produced utility scores for each configuration. The selection stage identified the best configuration and locked it without referencing holdout data. NSA was adopted as the anomaly source based on the replication evidence in Chapter~\ref{chapter2}, and offline policy evaluation confirmed it as the only source producing non-negative utility delta against the prediction-only baseline.
-
-\subsubsection{Audit-Stage Consistency Check}
-
-The audit stage evaluated the locked configuration on the 4 strict holdout runs and performed a run-wise consistency check. This check verified that a threshold fraction of individual holdout runs showed non-negative hybrid advantage (safe placement delta $\geq 0$), producing a \texttt{passed} flag. The audit confirms that the offline-selected parameters transfer to unseen data, supporting H3.
-
-
-\subsection{Custom Scheduler Deployment Validation}
-
-The deployed custom scheduler was validated through the following checks:
-
-\begin{itemize}
-	\item \textbf{Scheduler registration.} After applying the manifest, \texttt{kubectl get pods -n kube-system} confirms the \texttt{custom-rank-scheduler} pod reaches \texttt{Running} status. Leader election logs confirm the scheduler acquires its dedicated lock.
-	\item \textbf{Pod routing.} Pods created with \texttt{spec.schedulerName: custom-rank-scheduler} are scheduled by the custom instance, confirmed by the \texttt{Scheduled} event source field in \texttt{kubectl describe pod}.
-	\item \textbf{Isolation.} Pods without the scheduler name annotation continue to be handled by \texttt{default-scheduler}, verified by inspecting events for baseline-arm pods during the matched-arm experiment.
-\end{itemize}
-
-
-\subsection{Online Experiment Data Integrity}
-
-Each trial produces paired CSV outputs (\texttt{baseline\_arm\_scheduling.csv} and \texttt{custom\_arm\_scheduling.csv}) with per-pod timing, placement, and label fields. The following integrity checks were applied:
-
-\begin{itemize}
-	\item \textbf{Pod count verification.} Each arm produces exactly 30 pod records (15 per phase $\times$ 2 phases), confirmed across all 5 trials.
-	\item \textbf{Scheduler attribution.} The \texttt{scheduler} field in each CSV row matches the expected scheduler name for that arm, ensuring no cross-contamination between arms.
-	\item \textbf{Timing consistency.} All scheduling latency and startup time values are non-negative, and total time equals the sum of latency and startup time within floating-point tolerance.
-	\item \textbf{Stress injection confirmation.} During stress-phase pods, at least one worker node's relative CPU exceeds the anomaly threshold (1.25), confirming that the injected stress was active during placement decisions.
-\end{itemize}
+This subsection is intentionally reserved for post-run validation. After the final matched-arm execution, it will report artifact counts, phase coverage, workload coverage, expected-node match rates, timing consistency, and confirmation that ranking and snapshot artifacts were written for every custom-arm decision.
 
 
 \subsection{Threats to Validity and Mitigations}
 
-\textbf{Internal validity threats.} Telemetry startup instability and transient endpoint failures can bias data availability and class balance. Sequential arm execution in the online experiment means cluster state may drift between arms. Mitigations include collector startup checks, retry logic, endpoint preflight checks, controlled inter-pod spacing, and matched workload sequences to minimise ordering effects across arms.
+\textbf{Internal validity threats.} Live cluster state can drift between arms, telemetry endpoints can fail transiently, and heterogeneous node behaviour can complicate attribution. These threats were mitigated by explicit warm-up, one-shot pre-decision snapshots, persisted decision artifacts, counterbalanced arm order, and fixed washout periods.
 
-\textbf{Construct validity threats.} The online experiment measures scheduling latency, startup time, and placement quality under controlled stress injection, which are proxies for real edge QoS. Mitigation: multi-metric evaluation (safety, anomalies, contention, fairness, latency, utility) and per-phase and per-workload breakdowns provide diagnostic depth beyond aggregate comparisons.
+\textbf{Construct validity threats.} The final online experiment measures placement safety, anomaly exposure, contention, timing, fairness, and utility under controlled stress injection. These remain proxies for wider edge quality of service, but they are closer to actual placement decisions than predictor error or detector F1 alone.
 
-\textbf{External validity threats.} Cloud VM edge simulation may not fully represent heterogeneous physical edge deployments. The two-worker cluster limits the diversity of placement options available to the scheduler. Mitigation: use of K3s, per-node telemetry, stress-pattern diversification, and multiple trial repetitions to assess consistency.
+\textbf{External validity threats.} Even with the expanded worker set, the cluster remains smaller and cleaner than many production edge deployments. K3s on cloud VMs plus one Raspberry Pi is a stronger edge proxy than the earlier two-worker replication cluster, but still not a complete substitute for geographically distributed physical edge fleets.
 
-\textbf{Selection bias threat.} Policy parameters were tuned on offline development runs, which could introduce optimistic bias if the same data informed both selection and evaluation. Mitigation: strict separation of offline selection (development scope) from online evaluation (live cluster with fresh workloads), ensuring no parameter adjustment occurs after the online experiment begins.
+\textbf{Selection bias threat.} Offline replay influenced the choice of the core hybrid family, but the final live execution refinements were fixed before the online experiment. This reduces the risk of optimistic bias from adapting the method after observing live outcomes.
 
 
 \subsection{Reproducibility Package}
@@ -231,13 +145,13 @@ Each trial produces paired CSV outputs (\texttt{baseline\_arm\_scheduling.csv} a
 Reproducibility is supported through code, configuration, and artifact traceability:
 
 \begin{itemize}
-	\item Campaign plans and per-run artifacts (raw telemetry, labels, phases, logs, metadata).
-	\item Locked policy configuration from offline selection (anomaly source, weights).
-	\item Saved model directories with training summaries.
-	\item Custom scheduler Kubernetes manifests (\texttt{custom-rank-scheduler.yaml}) and environment configuration.
-	\item Per-trial online experiment artifacts: baseline and custom arm CSVs, summary JSONs, metadata, and logs.
-	\item Aggregated trial summary (\texttt{stage\_b\_trials\_aggregate.json}) with per-trial and cross-trial statistics.
-	\item Version-controlled scripts for all stages of the pipeline, from telemetry collection through online evaluation.
+\item campaign plans and per-run telemetry artifacts
+\item locked model directories with training summaries
+\item offline replay audit configuration and outputs
+\item workload manifests and metric-collection helpers
+\item authoritative online runner, node-capacity export, and redesigned analysis scripts
+\item per-decision online artifacts: snapshot CSVs, ranking JSONs, metadata, and enriched arm CSVs
+\item final run summary JSON produced from the redesigned Stage B analysis entry point
 \end{itemize}
 
-The workflow aligns with general reproducible-computational-science practice: preserving both code and executable analysis artifacts rather than reporting metrics only \cite{peng2011reproducible}.
+This package supports both code-level reproducibility and decision-level auditability, which is particularly important once the custom arm is evaluated through authoritative pre-decision binding.

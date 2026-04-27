@@ -122,6 +122,7 @@ class ClusterPredictor:
 
     def __init__(self, model_dir, window_size=10):
         self.predictors = {}
+        self.fallback_only_nodes = set()
         self.model_dir = model_dir
         self.window_size = window_size
 
@@ -131,11 +132,17 @@ class ClusterPredictor:
         model_path = os.path.join(self.model_dir, f"model_{node_short}.pkl")
         scaler_path = os.path.join(self.model_dir, f"scaler_{node_short}.pkl")
 
-        if not os.path.exists(model_path):
-            raise FileNotFoundError(f"No model found for {node_name} at {model_path}")
+        if not os.path.exists(model_path) or not os.path.exists(scaler_path):
+            self.fallback_only_nodes.add(node_name)
+            print(
+                f"No predictor artifacts found for {node_name}; "
+                "falling back to live telemetry load estimates"
+            )
+            return False
 
         self.predictors[node_name] = NodePredictor(model_path, scaler_path, self.window_size)
         print(f"Loaded predictor for {node_name}")
+        return True
 
     def update(self, node_name, observation):
         """Feed a new observation to a node's predictor."""
