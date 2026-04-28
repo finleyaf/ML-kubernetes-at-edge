@@ -3,7 +3,7 @@
 
 \section{Methodology Overview}
 
-This chapter defines the final methodological design used to build and evaluate an anomaly-aware lightweight scheduling pipeline for edge Kubernetes environments. The replication studies in Appendix~\ref{chapter2} established the anomaly-source evidence base and clarified preprocessing sensitivity. Building on that foundation, the present methodology separates offline development from final live evaluation. Offline replay is used to justify detector choice, train and validate the predictor, and audit the locked hybrid policy on historical telemetry. The final scheduler comparison is then made through an authoritative matched-arm experiment on a live heterogeneous K3s cluster.
+This chapter defines the methodological design used to build and evaluate an anomaly-aware lightweight scheduling pipeline for edge Kubernetes environments. The replication studies in Appendix~\ref{chapter2} established the anomaly-source evidence base and clarified preprocessing sensitivity. Building on that foundation, the present methodology separates offline development from final live evaluation. Offline replay is used to justify detector choice, train and validate the predictor, and audit the locked hybrid policy on historical telemetry. The final scheduler comparison is then made through an authoritative matched-arm experiment on a live K3s cluster restricted to the homogeneous worker subset \texttt{k3s-worker-2}, \texttt{k3s-worker-3}, and \texttt{k3s-worker-4}. This restriction keeps the default scheduler baseline close to its native decision logic while avoiding the confounding effect of mixed-capacity workers in the final claim \cite{liu2024dynamic}.
 
 The methodological principle is simple: no online outcome is used to tune the final policy after the authoritative experiment protocol is fixed. The offline stage therefore informs the core policy family, while the online stage provides the dissertation-grade scheduler comparison claim.
 
@@ -50,7 +50,7 @@ The implemented pipeline is organised into two linked stages.
 \item \textbf{Matched-arm execution and analysis.} \texttt{run\_stage\_b\_matched\_arms.sh} delegates to the authoritative runner, executes counterbalanced default and custom arms across repeated trials, and writes enriched CSV, metadata, and summary artifacts for final analysis.
 \end{enumerate}
 
-This design preserves the information barrier between offline development and final online evaluation while also recognising that the final live protocol requires fixed execution refinements that do not exist in offline replay alone, most notably workload-aware capacity pressure, explicit warm-up, and authoritative rank-and-pin binding.
+This design preserves the information barrier between offline development and final online evaluation while also recognising that the final live protocol requires fixed execution refinements that do not exist in offline replay alone, most notably workload-aware capacity pressure, explicit warm-up, a common eligible worker set for both arms, and authoritative rank-and-pin binding.
 
 
 \subsection{Run Construction, Labelling, and Dataset Governance}
@@ -134,12 +134,12 @@ At each decision step, each candidate node receives three signals:
 \item \textbf{Workload-capacity penalty} derived from the pod request and the node's allocatable CPU and memory.
 \end{itemize}
 
-If the predictor is not yet ready, or if a node lacks trained predictor artifacts, a bounded fallback load estimate is formed from current CPU, RAM, and network observations. This ensures the live ranker continues to operate on heterogeneous worker sets even when model coverage is incomplete.
+If the predictor is not yet ready, or if a node lacks trained predictor artifacts, a bounded fallback load estimate is formed from current CPU, RAM, and network observations. This ensures the live ranker continues to operate on the selected worker set even when model coverage is incomplete.
 
-For node \(i\), let \(\hat{L}_i\) denote base predicted load, \(R_i\) anomaly risk, and \(C_i\) the workload-capacity penalty. The live score is:
+For node \(i\), let \(\hat{L}_i\) denote base predicted load, \(R_i\) anomaly risk, \(C_i\) the workload-capacity penalty, and \(\rho_i\) the observed relative CPU load at decision time. The live score is:
 
 \[
-\text{score}_i = w_p^{(i)}\,(\hat{L}_i + C_i) + \left(1-w_p^{(i)}\right)R_i
+\text{score}_i = w_p^{(i)}\,(\hat{L}_i + C_i) + \left(1-w_p^{(i)}\right)R_i + P_i^{\text{cont}} + P_i^{\text{safe}}
 \]
 
 where \(w_p^{(i)}\) is either a fixed prediction weight or an adaptively shifted value based on anomaly risk. The capacity term is defined as:
@@ -148,9 +148,16 @@ where \(w_p^{(i)}\) is either a fixed prediction weight or an adaptively shifted
 C_i = \gamma\,\max\!\left(\frac{\text{cpu}_{\text{req}}}{\text{cpu}_{\text{cap},i}},\;\frac{\text{mem}_{\text{req}}}{\text{mem}_{\text{cap},i}}\right)
 \]
 
-with \(\gamma\) fixed before the live experiment. Lower total score indicates the preferred placement.
+with \(\gamma\) fixed before the live experiment. Explicit contention and safety penalties are then applied from the observed relative CPU level:
 
-The NSA monitor remains one-class and history-based: each node's recent trajectory defines \textit{self} behaviour, while sampled detectors in non-self regions produce anomaly risk from nearest-detector distance. This preserves continuity with the replication evidence in Appendix~\ref{chapter2}, while the capacity term extends the ranker to heterogeneous live execution.
+\[
+P_i^{\text{cont}} = \lambda_c\,\max(0, \rho_i - \tau_c), \qquad
+P_i^{\text{safe}} = \lambda_s\,\max(0, \rho_i - \tau_s)
+\]
+
+where \(\tau_c\) and \(\tau_s\) are the locked contention and safety thresholds, and \(\lambda_c\) and \(\lambda_s\) are the corresponding penalty factors. Lower total score indicates the preferred placement. When at least one node remains below the safety threshold, nodes above that threshold are additionally deprioritised through unsafe-node avoidance.
+
+The NSA monitor remains one-class and history-based: each node's recent trajectory defines \textit{self} behaviour, while sampled detectors in non-self regions produce anomaly risk from nearest-detector distance. This preserves continuity with the replication evidence in Appendix~\ref{chapter2}, while the capacity and observed-load terms extend the ranker to live workload placement.
 
 
 \subsection{Policy Variants and Final Comparison Surface}
@@ -160,7 +167,7 @@ Offline replay retains three internal policies for controlled comparison on iden
 \begin{itemize}
 \item \textbf{Prediction-only:} \(w_p=1.0\), anomaly weight \(=0.0\).
 \item \textbf{Anomaly-only:} \(w_p=0.0\), anomaly weight \(=1.0\).
-\item \textbf{Hybrid:} fixed high-prediction-weight policy with anomaly correction.
+\item \textbf{Hybrid:} prediction-led scoring with anomaly correction, workload-capacity pressure, and explicit observed-load safety penalties.
 \end{itemize}
 
 For the authoritative online comparison, however, the relevant external comparison is between:
@@ -178,17 +185,23 @@ This distinction is important. The offline stage compares internal policies on r
 \subsection{Offline Policy Locking and Replay Audit}
 \label{sec:offline-selection}
 
-The final report treats offline evaluation as a locked replay audit aligned to the final live policy family. NSA is retained as the anomaly source on the basis of the replication evidence in Appendix~\ref{chapter2}, and the offline defaults are fixed to the same family used online:
+The final report treats offline evaluation as a locked replay audit aligned to the final live policy family. NSA is retained as the anomaly source on the basis of the replication evidence in Appendix~\ref{chapter2}, and the offline defaults are fixed to the same family used online. A dedicated safety-priority replay protocol was then used to select the final live configuration before the authoritative run was executed:
 
 \begin{itemize}
 \item predictor window \(= 5\)
 \item warm-up \(= 24\) observations
 \item anomaly history \(= 45\)
 \item anomaly source \(=\) NSA
-\item prediction weight \(= 0.9\)
-\item anomaly weight \(= 0.1\)
+\item base prediction weight \(= 0.8\)
+\item base anomaly weight \(= 0.2\)
+\item adaptive weighting enabled with risk thresholds \(0.2\) and \(0.7\)
+\item adaptive maximum weight shift \(= 0.35\)
+\item prediction-weight bounds \([0.05, 0.95]\)
 \item NSA detector budget \(= 120\)
 \item NSA detector radius \(= 0.9\)
+\item contention threshold \(= 1.0\), contention penalty \(= 0.1\)
+\item safety threshold \(= 1.0\), unsafe-node penalty \(= 0.25\)
+\item unsafe-node avoidance enabled
 \end{itemize}
 
 The replay objective remains the protocol-defined utility:
@@ -197,7 +210,7 @@ The replay objective remains the protocol-defined utility:
 U = 0.45\,\text{safe} - 0.25\,\text{anom} - 0.15\,\text{contention} - 0.10\,\text{latency} + 0.05\,\text{fairness}
 \]
 
-with tie-breakers favouring higher safe placement, fewer anomalies, lower contention, better fairness, and lower latency. This locked replay stage is used to confirm that the chosen hybrid family remains preferable to the prediction-only baseline on historical telemetry without reopening a broad online-informed search surface.
+with tie-breakers favouring higher safe placement, fewer anomalies, lower contention, better fairness, and lower latency. This locked replay stage is used to confirm that the chosen hybrid family remains preferable to simpler alternatives on historical telemetry without reopening a broad online-informed search surface.
 
 
 \subsection{Locked Custom Scheduler Configuration}
@@ -206,19 +219,30 @@ After offline development, the following parameters were frozen for the final li
 
 \begin{itemize}
 \item anomaly source \(=\) NSA
-\item prediction weight \(= 0.9\)
-\item anomaly weight \(= 0.1\)
+\item base prediction weight \(= 0.8\)
+\item base anomaly weight \(= 0.2\)
+\item adaptive weighting enabled
+\item adaptive risk thresholds \(= 0.2\) and \(0.7\)
+\item adaptive maximum shift \(= 0.35\)
+\item minimum prediction weight \(= 0.05\)
+\item maximum prediction weight \(= 0.95\)
 \item anomaly history \(= 45\)
 \item warm-up history \(= 24\) one-second snapshots
 \item NSA detector budget \(= 120\)
 \item NSA detector radius \(= 0.9\)
+\item contention relative CPU threshold \(= 1.0\)
+\item contention penalty factor \(= 0.1\)
+\item safe relative CPU threshold \(= 1.0\)
+\item unsafe-node penalty factor \(= 0.25\)
+\item unsafe-node avoidance enabled
 \end{itemize}
 
-In addition to these core policy parameters, the final live protocol also fixes the execution refinements needed for heterogeneous deployment:
+In addition to these core policy parameters, the final live protocol also fixes the execution refinements needed for the authoritative online comparison:
 
 \begin{itemize}
 \item workload-aware capacity penalty factor \(= 1.0\)
 \item live export of node allocatable CPU and memory
+\item common eligible worker set \(=\) \texttt{k3s-worker-2}, \texttt{k3s-worker-3}, \texttt{k3s-worker-4}
 \item one-shot pre-decision telemetry snapshots and persisted ranking artifacts
 \item authoritative custom placement through rank-and-pin rather than through a secondary scheduler profile
 \end{itemize}
@@ -228,7 +252,7 @@ These refinements were fixed before the final experiment and are treated as part
 
 \subsection{Online Matched-Arm Experiment (Stage B)}
 
-The authoritative comparison between the custom scheduler and the default Kubernetes scheduler is conducted as a matched-arm online experiment on the live K3s cluster. The final cluster comprises a control node and four schedulable worker targets: \texttt{k3s-worker-2}, \texttt{k3s-worker-3}, \texttt{k3s-worker-4}, and \texttt{raspberrypi}. This expands the placement space beyond the earlier two-worker replication environment and introduces explicit heterogeneity into the online study.
+The authoritative comparison between the custom scheduler and the default Kubernetes scheduler is conducted as a matched-arm online experiment on the live K3s cluster. The physical platform contains a control node and multiple workers, but the final scheduler claim is restricted to the homogeneous worker subset \texttt{k3s-worker-2}, \texttt{k3s-worker-3}, and \texttt{k3s-worker-4}. This keeps both arms on the same feasible worker pool and makes the default scheduler baseline easier to interpret in light of its reliance on comparatively homogeneous resources \cite{liu2024dynamic}.
 
 \subsubsection{Experimental Design}
 
@@ -237,8 +261,8 @@ Each trial contains a normal phase and three stress phases (CPU, memory, and mix
 The two arms are:
 
 \begin{enumerate}
-\item \textbf{Baseline arm.} The workload manifest is submitted without a forced node, leaving the placement decision to \texttt{default-scheduler}.
-\item \textbf{Custom arm.} The ranking engine is invoked immediately before submission. It consumes the seeded telemetry history, the newest one-shot snapshot, the workload request extracted from the manifest, and the exported node capacities. The best node is then written into \texttt{spec.nodeName}, making the placement decision authoritative.
+\item \textbf{Baseline arm.} The workload manifest is submitted with worker-pool eligibility constraints but without a forced node, leaving the placement decision to the unmodified \texttt{default-scheduler}.
+\item \textbf{Custom arm.} The ranking engine is invoked immediately before submission. It consumes the seeded telemetry history, the newest one-shot snapshot, the workload request extracted from the manifest, and the exported node capacities. The best node is then written into \texttt{spec.nodeName}, making the placement decision authoritative while preserving the same eligible worker set used by the baseline arm.
 \end{enumerate}
 
 Stress profiles are rotated across the worker set to avoid coupling any single resource profile to a single node. A short washout period is inserted after each decision to improve independence between successive placements.
@@ -282,7 +306,7 @@ For each pod, \texttt{collect\_scheduling\_metrics.py} records:
 \item paths to the snapshot CSV and ranking JSON used for the decision
 \end{itemize}
 
-The redesigned summary stage then produces aggregate, per-phase, per-workload, and utility-component views from these enriched artifacts.
+The final summary stage then produces aggregate, per-phase, per-workload, and utility-component views from these enriched artifacts.
 
 
 \section{Software Management and Version Control}
@@ -306,4 +330,4 @@ Configuration files, evaluation protocols, environment templates, and saved mode
 
 \section{Methodology Summary}
 
-This chapter defined a two-stage methodology for evaluating a lightweight anomaly-aware scheduler against the default Kubernetes scheduler in an edge cluster setting. Offline work established detector choice, trained and validated the predictor, and audited the locked hybrid policy family on replayed telemetry. The final scheduler claim is reserved for the authoritative online matched-arm experiment, which uses explicit warm-up, workload-aware capacity scoring, counterbalanced arm order, multiple stress profiles, rotating stress targets, and authoritative rank-and-pin placement on a heterogeneous live cluster. The next chapter describes the implemented system and the readiness validation completed before the final experiment is executed.
+This chapter defined a two-stage methodology for evaluating a lightweight anomaly-aware scheduler against the default Kubernetes scheduler in an edge cluster setting. Offline work established detector choice, trained and validated the predictor, and audited the locked hybrid policy family on replayed telemetry. The final scheduler claim is reserved for the authoritative online matched-arm experiment, which uses a homogeneous three-worker subset, explicit warm-up, workload-aware capacity scoring, adaptive safety penalties, counterbalanced arm order, multiple stress profiles, rotating stress targets, and authoritative rank-and-pin placement. The next chapter describes the implemented system and the validation evidence used to justify and check that final protocol.
