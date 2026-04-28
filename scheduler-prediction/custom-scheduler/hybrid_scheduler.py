@@ -25,9 +25,12 @@ class NodeScore:
     anomaly_risk: float
     weight_prediction: float
     weight_anomaly: float
+    observed_relative_cpu: float
     cpu_request_fraction: float
     memory_request_fraction: float
     capacity_penalty: float
+    contention_penalty: float
+    safety_penalty: float
     prediction_source: str
 
 
@@ -290,6 +293,11 @@ class HybridScheduler:
         adaptive_max_prediction_weight: float = 0.95,
         node_capacities: Optional[Dict[str, NodeCapacity]] = None,
         capacity_penalty_factor: float = 1.0,
+        contention_relative_cpu_threshold: float = 1.1,
+        contention_penalty_factor: float = 0.0,
+        safe_relative_cpu_threshold: float = 1.1,
+        unsafe_penalty_factor: float = 0.0,
+        avoid_unsafe_nodes: bool = False,
     ):
         if abs((weight_prediction + weight_anomaly) - 1.0) > 1e-6:
             raise ValueError("weight_prediction + weight_anomaly must equal 1.0")
@@ -304,6 +312,11 @@ class HybridScheduler:
         self.adaptive_min_prediction_weight = adaptive_min_prediction_weight
         self.adaptive_max_prediction_weight = adaptive_max_prediction_weight
         self.capacity_penalty_factor = max(0.0, float(capacity_penalty_factor))
+        self.contention_relative_cpu_threshold = max(1e-6, float(contention_relative_cpu_threshold))
+        self.contention_penalty_factor = max(0.0, float(contention_penalty_factor))
+        self.safe_relative_cpu_threshold = max(1e-6, float(safe_relative_cpu_threshold))
+        self.unsafe_penalty_factor = max(0.0, float(unsafe_penalty_factor))
+        self.avoid_unsafe_nodes = bool(avoid_unsafe_nodes)
         self.node_capacities = node_capacities or {}
 
         if self.adaptive_risk_low >= self.adaptive_risk_high:
@@ -380,6 +393,25 @@ class HybridScheduler:
         penalty = self.capacity_penalty_factor * max(cpu_fraction, memory_fraction)
         return cpu_fraction, memory_fraction, penalty
 
+    def _relative_cpu_loads(
+        self,
+        observations_by_node: Dict[str, Dict[str, float]],
+    ) -> Dict[str, float]:
+        cpu_totals = {
+            node: max(0.0, float(obs.get("cpu_user", 0.0)) + float(obs.get("cpu_system", 0.0)))
+            for node, obs in observations_by_node.items()
+        }
+
+        if not cpu_totals:
+            return {}
+
+        mean_cpu = sum(cpu_totals.values()) / max(len(cpu_totals), 1)
+        mean_cpu = max(mean_cpu, 1e-9)
+        return {
+            node: total_cpu / mean_cpu
+            for node, total_cpu in cpu_totals.items()
+        }
+
     def score_nodes(
         self,
         observations_by_node: Dict[str, Dict[str, float]],
@@ -389,6 +421,10 @@ class HybridScheduler:
         scored: List[NodeScore] = []
 
         predictions = self.predictor.predict_all()
+        relative_cpu_loads = self._relative_cpu_loads(observations_by_node)
+        has_safe_alternative = any(
+            rel_cpu < self.safe_relative_cpu_threshold for rel_cpu in relative_cpu_loads.values()
+        )
 
         for node, obs in observations_by_node.items():
             if node not in self.monitors:
@@ -408,11 +444,31 @@ class HybridScheduler:
                 workload_request,
             )
             projected_load = base_pred_load + capacity_penalty
+            observed_relative_cpu = float(relative_cpu_loads.get(node, 0.0))
+            contention_penalty = self.contention_penalty_factor * max(
+                0.0,
+                observed_relative_cpu - self.contention_relative_cpu_threshold,
+            )
 
             anomaly_risk = self.monitors[node].risk(obs)
             eff_pred_w = self._effective_prediction_weight(anomaly_risk)
             eff_anom_w = 1.0 - eff_pred_w
-            total = eff_pred_w * projected_load + eff_anom_w * anomaly_risk
+            safety_penalty = 0.0
+            if (
+                self.avoid_unsafe_nodes
+                and has_safe_alternative
+                and observed_relative_cpu >= self.safe_relative_cpu_threshold
+            ):
+                safety_penalty = self.unsafe_penalty_factor * (
+                    1.0 + max(0.0, observed_relative_cpu - self.safe_relative_cpu_threshold)
+                )
+
+            total = (
+                eff_pred_w * projected_load
+                + eff_anom_w * anomaly_risk
+                + contention_penalty
+                + safety_penalty
+            )
 
             scored.append(
                 NodeScore(
@@ -423,9 +479,12 @@ class HybridScheduler:
                     anomaly_risk=round(float(anomaly_risk), 4),
                     weight_prediction=round(float(eff_pred_w), 4),
                     weight_anomaly=round(float(eff_anom_w), 4),
+                    observed_relative_cpu=round(float(observed_relative_cpu), 4),
                     cpu_request_fraction=round(float(cpu_request_fraction), 4),
                     memory_request_fraction=round(float(memory_request_fraction), 4),
                     capacity_penalty=round(float(capacity_penalty), 4),
+                    contention_penalty=round(float(contention_penalty), 4),
+                    safety_penalty=round(float(safety_penalty), 4),
                     prediction_source=prediction_source,
                 )
             )

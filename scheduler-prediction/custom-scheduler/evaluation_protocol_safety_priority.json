@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "scheduler": {
+    "adaptive_weighting": true,
+    "adaptive_risk_low": 0.2,
+    "adaptive_risk_high": 0.7,
+    "adaptive_max_shift": 0.35,
+    "adaptive_min_prediction_weight": 0.05,
+    "adaptive_max_prediction_weight": 0.95,
+    "contention_relative_cpu_threshold": 1.1,
+    "contention_penalty_factor": 0.2,
+    "safe_relative_cpu_threshold": 1.05,
+    "unsafe_penalty_factor": 0.5,
+    "avoid_unsafe_nodes": true
+  },
+  "selection": {
+    "objective": "safe_rate",
+    "utility_weights": {
+      "safe_placement_rate": 0.55,
+      "anomalous_rate": 0.25,
+      "high_contention_decision_rate": 0.2,
+      "latency": 0.0,
+      "placement_fairness_percent": 0.0
+    },
+    "latency_scale_ms": 1.0,
+    "contention_relative_cpu_threshold": 1.1,
+    "tie_breakers": [
+      "hybrid_safe_rate",
+      "hybrid_low_contention",
+      "hybrid_anomalous",
+      "hybrid_latency"
+    ]
+  },
+  "data_split": {
+    "freeze_test_runs": false,
+    "test_runs": []
+  },
+  "consistency_checks": {
+    "hybrid_vs_prediction_only": {
+      "min_positive_safe_delta_fraction": 0.75,
+      "require_nonpositive_anomalous_delta": true
+    }
+  }
+}

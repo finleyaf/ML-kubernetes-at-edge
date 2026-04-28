@@ -1,0 +1,22 @@
+{
+  "frozen_by_protocol": false,
+  "protocol_path": "scheduler-prediction/custom-scheduler/evaluation_protocol_safety_priority.json",
+  "split_config_source": "scheduler-prediction/prediction/results/phase4_validation/phase4_validation_fair_cohort_20260423_183525_retry/locked_predictor_config.json",
+  "validation_runs": [
+    "run_043",
+    "run_044",
+    "run_045",
+    "run_046",
+    "run_047",
+    "run_048",
+    "run_049",
+    "run_050",
+    "run_051"
+  ],
+  "test_runs": [
+    "run_052",
+    "run_053",
+    "run_054",
+    "run_055"
+  ]
+}

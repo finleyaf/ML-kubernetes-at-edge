@@ -76,6 +76,11 @@ def load_protocol(path: Optional[str]) -> Dict:
             "adaptive_max_shift": 0.35,
             "adaptive_min_prediction_weight": 0.05,
             "adaptive_max_prediction_weight": 0.95,
+            "contention_relative_cpu_threshold": 1.1,
+            "contention_penalty_factor": 0.0,
+            "safe_relative_cpu_threshold": 1.1,
+            "unsafe_penalty_factor": 0.0,
+            "avoid_unsafe_nodes": False,
         },
         "selection": {
             "objective": "utility",
@@ -440,6 +445,11 @@ def evaluate_split(
     nsa_num_detectors: int = 120,
     nsa_radius: float = 0.9,
     kmeans_threshold_std: float = 2.0,
+    contention_relative_cpu_threshold: float = 1.1,
+    contention_penalty_factor: float = 0.0,
+    safe_relative_cpu_threshold: float = 1.1,
+    unsafe_penalty_factor: float = 0.0,
+    avoid_unsafe_nodes: bool = False,
 ) -> Dict:
     protocol = protocol or load_protocol(None)
 
@@ -494,6 +504,11 @@ def evaluate_split(
                 adaptive_max_prediction_weight=float(
                     sched_cfg.get("adaptive_max_prediction_weight", 0.95)
                 ),
+                contention_relative_cpu_threshold=float(contention_relative_cpu_threshold),
+                contention_penalty_factor=float(contention_penalty_factor),
+                safe_relative_cpu_threshold=float(safe_relative_cpu_threshold),
+                unsafe_penalty_factor=float(unsafe_penalty_factor),
+                avoid_unsafe_nodes=bool(avoid_unsafe_nodes),
             ),
         }
 
@@ -639,6 +654,11 @@ def evaluate_runwise_hybrid_consistency(
     nsa_num_detectors: int = 120,
     nsa_radius: float = 0.9,
     kmeans_threshold_std: float = 2.0,
+    contention_relative_cpu_threshold: float = 1.1,
+    contention_penalty_factor: float = 0.0,
+    safe_relative_cpu_threshold: float = 1.1,
+    unsafe_penalty_factor: float = 0.0,
+    avoid_unsafe_nodes: bool = False,
 ) -> Dict:
     rows = []
     for run_id in run_ids:
@@ -655,6 +675,11 @@ def evaluate_runwise_hybrid_consistency(
             nsa_num_detectors=nsa_num_detectors,
             nsa_radius=nsa_radius,
             kmeans_threshold_std=kmeans_threshold_std,
+            contention_relative_cpu_threshold=contention_relative_cpu_threshold,
+            contention_penalty_factor=contention_penalty_factor,
+            safe_relative_cpu_threshold=safe_relative_cpu_threshold,
+            unsafe_penalty_factor=unsafe_penalty_factor,
+            avoid_unsafe_nodes=avoid_unsafe_nodes,
             protocol=protocol,
         )
         d = r["comparisons"]["hybrid_vs_prediction_only"]
@@ -714,12 +739,37 @@ def main() -> None:
     parser.add_argument("--kmeans-threshold-std", type=float, default=2.0)
     parser.add_argument("--weight-grid", default="0.9")
     parser.add_argument("--z-grid", default="2.5")
+    parser.add_argument("--contention-threshold-grid", default=None)
+    parser.add_argument("--contention-penalty-grid", default=None)
+    parser.add_argument("--safe-threshold-grid", default=None)
+    parser.add_argument("--unsafe-penalty-grid", default=None)
     args = parser.parse_args()
 
     protocol = load_protocol(args.protocol)
+    sched_cfg = protocol.get("scheduler", {})
     window_size = resolve_window_size(args.model_dir, args.window)
     weight_grid = parse_float_list(args.weight_grid)
     z_grid = parse_float_list(args.z_grid)
+    contention_threshold_grid = (
+        parse_float_list(args.contention_threshold_grid)
+        if args.contention_threshold_grid
+        else [float(sched_cfg.get("contention_relative_cpu_threshold", 1.1))]
+    )
+    contention_penalty_grid = (
+        parse_float_list(args.contention_penalty_grid)
+        if args.contention_penalty_grid
+        else [float(sched_cfg.get("contention_penalty_factor", 0.0))]
+    )
+    safe_threshold_grid = (
+        parse_float_list(args.safe_threshold_grid)
+        if args.safe_threshold_grid
+        else [float(sched_cfg.get("safe_relative_cpu_threshold", 1.1))]
+    )
+    unsafe_penalty_grid = (
+        parse_float_list(args.unsafe_penalty_grid)
+        if args.unsafe_penalty_grid
+        else [float(sched_cfg.get("unsafe_penalty_factor", 0.0))]
+    )
 
     for w in weight_grid:
         if w < 0.0 or w > 1.0:
@@ -750,35 +800,66 @@ def main() -> None:
     print(f"Test runs ({len(test_runs)}): {test_runs}")
     print(f"Using window size: {window_size}")
     print(f"Using anomaly source: {args.anomaly_source}")
-    print(f"Grid size: {len(weight_grid)} weights x {len(z_grid)} thresholds")
+    print(
+        "Grid size: "
+        f"{len(weight_grid)} weights x {len(z_grid)} anomaly thresholds x "
+        f"{len(contention_threshold_grid)} contention thresholds x "
+        f"{len(contention_penalty_grid)} contention penalties x "
+        f"{len(safe_threshold_grid)} safe thresholds x "
+        f"{len(unsafe_penalty_grid)} unsafe penalties"
+    )
 
     grid_results: List[Dict] = []
     for pred_weight in weight_grid:
         for z_threshold in z_grid:
-            print(f"Evaluating grid config: pred_weight={pred_weight}, z_threshold={z_threshold}")
-            val_result = evaluate_split(
-                runs_dir=args.runs_dir,
-                run_ids=validation_runs,
-                model_dir=args.model_dir,
-                window=window_size,
-                warmup=args.warmup,
-                anomaly_history=args.anomaly_history,
-                z_threshold=z_threshold,
-                hybrid_pred_weight=pred_weight,
-                anomaly_source=args.anomaly_source,
-                nsa_num_detectors=args.nsa_num_detectors,
-                nsa_radius=args.nsa_radius,
-                kmeans_threshold_std=args.kmeans_threshold_std,
-                protocol=protocol,
-            )
-            grid_results.append(
-                {
-                    "pred_weight": pred_weight,
-                    "anomaly_weight": round(1.0 - pred_weight, 6),
-                    "z_threshold": z_threshold,
-                    "validation": val_result,
-                }
-            )
+            for contention_threshold in contention_threshold_grid:
+                for contention_penalty in contention_penalty_grid:
+                    for safe_threshold in safe_threshold_grid:
+                        for unsafe_penalty in unsafe_penalty_grid:
+                            avoid_unsafe_nodes = bool(sched_cfg.get("avoid_unsafe_nodes", False)) or unsafe_penalty > 0.0
+                            print(
+                                "Evaluating grid config: "
+                                f"pred_weight={pred_weight}, "
+                                f"z_threshold={z_threshold}, "
+                                f"contention_threshold={contention_threshold}, "
+                                f"contention_penalty={contention_penalty}, "
+                                f"safe_threshold={safe_threshold}, "
+                                f"unsafe_penalty={unsafe_penalty}, "
+                                f"avoid_unsafe_nodes={avoid_unsafe_nodes}"
+                            )
+                            val_result = evaluate_split(
+                                runs_dir=args.runs_dir,
+                                run_ids=validation_runs,
+                                model_dir=args.model_dir,
+                                window=window_size,
+                                warmup=args.warmup,
+                                anomaly_history=args.anomaly_history,
+                                z_threshold=z_threshold,
+                                hybrid_pred_weight=pred_weight,
+                                anomaly_source=args.anomaly_source,
+                                nsa_num_detectors=args.nsa_num_detectors,
+                                nsa_radius=args.nsa_radius,
+                                kmeans_threshold_std=args.kmeans_threshold_std,
+                                contention_relative_cpu_threshold=contention_threshold,
+                                contention_penalty_factor=contention_penalty,
+                                safe_relative_cpu_threshold=safe_threshold,
+                                unsafe_penalty_factor=unsafe_penalty,
+                                avoid_unsafe_nodes=avoid_unsafe_nodes,
+                                protocol=protocol,
+                            )
+                            grid_results.append(
+                                {
+                                    "pred_weight": pred_weight,
+                                    "anomaly_weight": round(1.0 - pred_weight, 6),
+                                    "z_threshold": z_threshold,
+                                    "contention_relative_cpu_threshold": contention_threshold,
+                                    "contention_penalty_factor": contention_penalty,
+                                    "safe_relative_cpu_threshold": safe_threshold,
+                                    "unsafe_penalty_factor": unsafe_penalty,
+                                    "avoid_unsafe_nodes": avoid_unsafe_nodes,
+                                    "validation": val_result,
+                                }
+                            )
 
     best = choose_best_grid_result(grid_results, protocol)
 
@@ -786,7 +867,12 @@ def main() -> None:
         "Best validation config: "
         f"pred_weight={best['pred_weight']}, "
         f"anomaly_weight={best['anomaly_weight']}, "
-        f"z_threshold={best['z_threshold']}"
+        f"z_threshold={best['z_threshold']}, "
+        f"contention_threshold={best['contention_relative_cpu_threshold']}, "
+        f"contention_penalty={best['contention_penalty_factor']}, "
+        f"safe_threshold={best['safe_relative_cpu_threshold']}, "
+        f"unsafe_penalty={best['unsafe_penalty_factor']}, "
+        f"avoid_unsafe_nodes={best['avoid_unsafe_nodes']}"
     )
 
     test_result = evaluate_split(
@@ -802,6 +888,11 @@ def main() -> None:
         nsa_num_detectors=args.nsa_num_detectors,
         nsa_radius=args.nsa_radius,
         kmeans_threshold_std=args.kmeans_threshold_std,
+        contention_relative_cpu_threshold=float(best["contention_relative_cpu_threshold"]),
+        contention_penalty_factor=float(best["contention_penalty_factor"]),
+        safe_relative_cpu_threshold=float(best["safe_relative_cpu_threshold"]),
+        unsafe_penalty_factor=float(best["unsafe_penalty_factor"]),
+        avoid_unsafe_nodes=bool(best["avoid_unsafe_nodes"]),
         protocol=protocol,
     )
 
@@ -818,6 +909,11 @@ def main() -> None:
         nsa_num_detectors=args.nsa_num_detectors,
         nsa_radius=args.nsa_radius,
         kmeans_threshold_std=args.kmeans_threshold_std,
+        contention_relative_cpu_threshold=float(best["contention_relative_cpu_threshold"]),
+        contention_penalty_factor=float(best["contention_penalty_factor"]),
+        safe_relative_cpu_threshold=float(best["safe_relative_cpu_threshold"]),
+        unsafe_penalty_factor=float(best["unsafe_penalty_factor"]),
+        avoid_unsafe_nodes=bool(best["avoid_unsafe_nodes"]),
         protocol=protocol,
     )
     consistency_test = evaluate_runwise_hybrid_consistency(
@@ -833,6 +929,11 @@ def main() -> None:
         nsa_num_detectors=args.nsa_num_detectors,
         nsa_radius=args.nsa_radius,
         kmeans_threshold_std=args.kmeans_threshold_std,
+        contention_relative_cpu_threshold=float(best["contention_relative_cpu_threshold"]),
+        contention_penalty_factor=float(best["contention_penalty_factor"]),
+        safe_relative_cpu_threshold=float(best["safe_relative_cpu_threshold"]),
+        unsafe_penalty_factor=float(best["unsafe_penalty_factor"]),
+        avoid_unsafe_nodes=bool(best["avoid_unsafe_nodes"]),
         protocol=protocol,
     )
 
@@ -858,6 +959,10 @@ def main() -> None:
             "test_runs": test_runs,
             "weight_grid": weight_grid,
             "z_grid": z_grid,
+            "contention_threshold_grid": contention_threshold_grid,
+            "contention_penalty_grid": contention_penalty_grid,
+            "safe_threshold_grid": safe_threshold_grid,
+            "unsafe_penalty_grid": unsafe_penalty_grid,
         },
         "protocol": protocol,
         "split_manifest": split_manifest,
@@ -867,6 +972,11 @@ def main() -> None:
             "pred_weight": best["pred_weight"],
             "anomaly_weight": best["anomaly_weight"],
             "z_threshold": best["z_threshold"],
+            "contention_relative_cpu_threshold": best["contention_relative_cpu_threshold"],
+            "contention_penalty_factor": best["contention_penalty_factor"],
+            "safe_relative_cpu_threshold": best["safe_relative_cpu_threshold"],
+            "unsafe_penalty_factor": best["unsafe_penalty_factor"],
+            "avoid_unsafe_nodes": best["avoid_unsafe_nodes"],
             "validation_summary": best["validation"],
         },
         "consistency_validation": consistency_validation,

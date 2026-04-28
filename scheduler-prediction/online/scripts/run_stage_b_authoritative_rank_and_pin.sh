@@ -34,7 +34,8 @@ DEFAULT_SCHEDULER_NAME="${DEFAULT_SCHEDULER_NAME:-default-scheduler}"
 CUSTOM_SCHEDULER_NAME="${CUSTOM_SCHEDULER_NAME:-custom-rank-scheduler}"
 BASELINE_DECISION_MODE="${BASELINE_DECISION_MODE:-matched_round_robin_and_pin}"
 WORKER_NODES="${WORKER_NODES:-k3s-worker-2 k3s-worker-3 k3s-worker-4 raspberrypi}"
-NODES="${NODES:-${CONTROL_NODE} ${WORKER_NODES}}"
+# Stage B should always collect from the control plane plus the currently eligible worker pool.
+NODES="${CONTROL_NODE} ${WORKER_NODES}"
 NETDATA_BASE_URL="${NETDATA_BASE_URL:-http://localhost:20000}"
 STAGE_B_RUNS="${STAGE_B_RUNS:-10}"
 STAGE_B_WORKLOADS="${STAGE_B_WORKLOADS:-cpu-pod memory-pod mixed-pod}"
@@ -69,6 +70,17 @@ NSA_NUM_DETECTORS="${NSA_NUM_DETECTORS:-120}"
 NSA_RADIUS="${NSA_RADIUS:-0.9}"
 KMEANS_THRESHOLD_STD="${KMEANS_THRESHOLD_STD:-2.0}"
 Z_THRESHOLD="${Z_THRESHOLD:-2.5}"
+ADAPTIVE_WEIGHTING="${ADAPTIVE_WEIGHTING:-false}"
+ADAPTIVE_RISK_LOW="${ADAPTIVE_RISK_LOW:-0.2}"
+ADAPTIVE_RISK_HIGH="${ADAPTIVE_RISK_HIGH:-0.7}"
+ADAPTIVE_MAX_SHIFT="${ADAPTIVE_MAX_SHIFT:-0.35}"
+ADAPTIVE_MIN_PREDICTION_WEIGHT="${ADAPTIVE_MIN_PREDICTION_WEIGHT:-0.05}"
+ADAPTIVE_MAX_PREDICTION_WEIGHT="${ADAPTIVE_MAX_PREDICTION_WEIGHT:-0.95}"
+CONTENTION_RELATIVE_CPU_THRESHOLD="${CONTENTION_RELATIVE_CPU_THRESHOLD:-1.1}"
+CONTENTION_PENALTY_FACTOR="${CONTENTION_PENALTY_FACTOR:-0.0}"
+SAFE_RELATIVE_CPU_THRESHOLD="${SAFE_RELATIVE_CPU_THRESHOLD:-1.1}"
+UNSAFE_PENALTY_FACTOR="${UNSAFE_PENALTY_FACTOR:-0.0}"
+AVOID_UNSAFE_NODES="${AVOID_UNSAFE_NODES:-false}"
 VENV_PATH="${VENV_PATH:-.venv}"
 
 WORKLOADS_DIR="${PROJECT_ROOT}/scheduler-prediction/baseline/workloads"
@@ -171,10 +183,12 @@ render_workload_manifest() {
   local pod_name="$2"
   local scheduler_name="$3"
   local node_name="$4"
+  local eligible_nodes="$5"
 
   sed "s/name: .*/name: ${pod_name}/" "$(manifest_path "${workload}")" | awk \
     -v scheduler_name="${scheduler_name}" \
-    -v node_name="${node_name}" '
+    -v node_name="${node_name}" \
+    -v eligible_nodes="${eligible_nodes}" '
       /^spec:$/ {
         print
         if (scheduler_name != "") {
@@ -182,6 +196,22 @@ render_workload_manifest() {
         }
         if (node_name != "") {
           print "  nodeName: " node_name
+        }
+        if (eligible_nodes != "") {
+          split(eligible_nodes, nodes, /[[:space:]]+/)
+          print "  affinity:"
+          print "    nodeAffinity:"
+          print "      requiredDuringSchedulingIgnoredDuringExecution:"
+          print "        nodeSelectorTerms:"
+          print "          - matchExpressions:"
+          print "              - key: kubernetes.io/hostname"
+          print "                operator: In"
+          print "                values:"
+          for (i in nodes) {
+            if (nodes[i] != "") {
+              print "                  - " nodes[i]
+            }
+          }
         }
         next
       }
@@ -194,8 +224,13 @@ apply_workload() {
   local pod_name="$2"
   local scheduler_name="$3"
   local node_name="$4"
+  local eligible_nodes="$5"
 
-  render_workload_manifest "${workload}" "${pod_name}" "${scheduler_name}" "${node_name}" | \
+  # A previous interrupted run can leave a pod with the same deterministic name.
+  # Delete it first so reruns do not fail on immutable scheduling fields.
+  cleanup_pod "${pod_name}"
+
+  render_workload_manifest "${workload}" "${pod_name}" "${scheduler_name}" "${node_name}" "${eligible_nodes}" | \
     gcloud compute ssh "${CONTROL_NODE}" --zone="${ZONE}" --command="cat | kubectl apply -n ${K8S_NAMESPACE} -f -"
 }
 
@@ -740,6 +775,7 @@ run_decision() {
   local output_csv="${BASELINE_CSV}"
   local scheduler_name=""
   local node_name=""
+  local eligible_nodes="${WORKER_NODES}"
   local workload_cpu_m
   local workload_memory_mib
   local decision_total_score=""
@@ -761,14 +797,29 @@ run_decision() {
   capture_snapshot "${snapshot_file}" "${pod_name}_snapshot"
 
   if [[ "${arm}" == "baseline" ]]; then
-    expected_node="$(baseline_target_for "${trial}" "${phase_name}" "${workload}")"
-    node_name="${expected_node}"
+    case "${BASELINE_DECISION_MODE}" in
+      matched_round_robin_and_pin)
+        expected_node="$(baseline_target_for "${trial}" "${phase_name}" "${workload}")"
+        node_name="${expected_node}"
+        ;;
+      default_scheduler)
+        decision_mode="default_scheduler"
+        scheduler_name="${DEFAULT_SCHEDULER_NAME}"
+        expected_node=""
+        node_name=""
+        ;;
+      *)
+        echo "ERROR: unsupported BASELINE_DECISION_MODE=${BASELINE_DECISION_MODE}" >&2
+        exit 1
+        ;;
+    esac
   elif [[ "${arm}" == "custom" ]]; then
     append_snapshot_to_history "${snapshot_file}"
     ranking_file="${ARTIFACT_DIR}/${arm}/${pod_name}_ranking.json"
     "${PYTHON_BIN}" "${RANK_SCRIPT}" \
       --input "${CUSTOM_HISTORY}" \
       --model-dir "${MODEL_DIR_PATH}" \
+      --eligible-nodes "${WORKER_ARRAY[@]}" \
       --window "${WINDOW}" \
       --pred-weight "${PRED_WEIGHT}" \
       --anomaly-weight "${ANOMALY_WEIGHT}" \
@@ -778,6 +829,17 @@ run_decision() {
       --nsa-radius "${NSA_RADIUS}" \
       --kmeans-threshold-std "${KMEANS_THRESHOLD_STD}" \
       --z-threshold "${Z_THRESHOLD}" \
+      --adaptive-weighting "${ADAPTIVE_WEIGHTING}" \
+      --adaptive-risk-low "${ADAPTIVE_RISK_LOW}" \
+      --adaptive-risk-high "${ADAPTIVE_RISK_HIGH}" \
+      --adaptive-max-shift "${ADAPTIVE_MAX_SHIFT}" \
+      --adaptive-min-prediction-weight "${ADAPTIVE_MIN_PREDICTION_WEIGHT}" \
+      --adaptive-max-prediction-weight "${ADAPTIVE_MAX_PREDICTION_WEIGHT}" \
+      --contention-relative-cpu-threshold "${CONTENTION_RELATIVE_CPU_THRESHOLD}" \
+      --contention-penalty-factor "${CONTENTION_PENALTY_FACTOR}" \
+      --safe-relative-cpu-threshold "${SAFE_RELATIVE_CPU_THRESHOLD}" \
+      --unsafe-penalty-factor "${UNSAFE_PENALTY_FACTOR}" \
+      --avoid-unsafe-nodes "${AVOID_UNSAFE_NODES}" \
       --node-capacities "${CAPACITY_JSON}" \
       --workload-cpu-m "${workload_cpu_m}" \
       --workload-memory-mib "${workload_memory_mib}" \
@@ -797,7 +859,7 @@ run_decision() {
   fi
 
   echo "Deploying ${pod_name} (arm=${arm}, phase=${phase_name}, workload=${workload}, target=${expected_node:-scheduler-driven})" | tee -a "${LOG_DIR}/stage_b.log"
-  apply_workload "${workload}" "${pod_name}" "${scheduler_name}" "${node_name}"
+  apply_workload "${workload}" "${pod_name}" "${scheduler_name}" "${node_name}" "${eligible_nodes}"
   collect_metrics \
     "${pod_name}" \
     "${output_csv}" \
@@ -916,6 +978,17 @@ nsa_num_detectors=${NSA_NUM_DETECTORS}
 nsa_radius=${NSA_RADIUS}
 kmeans_threshold_std=${KMEANS_THRESHOLD_STD}
 z_threshold=${Z_THRESHOLD}
+adaptive_weighting=${ADAPTIVE_WEIGHTING}
+adaptive_risk_low=${ADAPTIVE_RISK_LOW}
+adaptive_risk_high=${ADAPTIVE_RISK_HIGH}
+adaptive_max_shift=${ADAPTIVE_MAX_SHIFT}
+adaptive_min_prediction_weight=${ADAPTIVE_MIN_PREDICTION_WEIGHT}
+adaptive_max_prediction_weight=${ADAPTIVE_MAX_PREDICTION_WEIGHT}
+contention_relative_cpu_threshold=${CONTENTION_RELATIVE_CPU_THRESHOLD}
+contention_penalty_factor=${CONTENTION_PENALTY_FACTOR}
+safe_relative_cpu_threshold=${SAFE_RELATIVE_CPU_THRESHOLD}
+unsafe_penalty_factor=${UNSAFE_PENALTY_FACTOR}
+avoid_unsafe_nodes=${AVOID_UNSAFE_NODES}
 contention_rel_cpu_threshold=${STAGE_B_CONTENTION_REL_CPU_THRESHOLD}
 anomaly_rel_cpu_threshold=${STAGE_B_ANOMALY_REL_CPU_THRESHOLD}
 completed_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
