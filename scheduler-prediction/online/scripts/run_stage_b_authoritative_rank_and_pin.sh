@@ -40,6 +40,8 @@ NETDATA_BASE_URL="${NETDATA_BASE_URL:-http://localhost:20000}"
 STAGE_B_RUNS="${STAGE_B_RUNS:-10}"
 STAGE_B_WORKLOADS="${STAGE_B_WORKLOADS:-cpu-pod memory-pod mixed-pod}"
 STAGE_B_ARM_ORDER_MODE="${STAGE_B_ARM_ORDER_MODE:-counterbalanced}"
+PI_NODE_NAME="${PI_NODE_NAME:-}"
+PI_ELIGIBLE_WORKLOADS="${PI_ELIGIBLE_WORKLOADS:-}"
 STAGE_B_WARMUP_SAMPLES="${STAGE_B_WARMUP_SAMPLES:-24}"
 STAGE_B_WARMUP_INTERVAL="${STAGE_B_WARMUP_INTERVAL:-1.0}"
 STAGE_B_WASHOUT_SECONDS="${STAGE_B_WASHOUT_SECONDS:-8}"
@@ -110,6 +112,7 @@ PYTHON_BIN="${PYTHON_BIN:-python3}"
 read -r -a NODE_ARRAY <<< "${NODES}"
 read -r -a WORKER_ARRAY <<< "${WORKER_NODES}"
 read -r -a WORKLOAD_ARRAY <<< "${STAGE_B_WORKLOADS}"
+read -r -a PI_ELIGIBLE_WORKLOAD_ARRAY <<< "${PI_ELIGIBLE_WORKLOADS}"
 read -r -a STRESS_PROFILE_ARRAY <<< "${STAGE_B_STRESS_PROFILES}"
 read -r -a STRESS_TARGET_ARRAY <<< "${STAGE_B_STRESS_TARGETS}"
 
@@ -119,6 +122,56 @@ run_remote() {
 
 manifest_path() {
   echo "${WORKLOADS_DIR}/$1.yaml"
+}
+
+non_pi_worker_nodes() {
+  local node
+
+  for node in "${WORKER_ARRAY[@]}"; do
+    if [[ -n "${PI_NODE_NAME}" && "${node}" == "${PI_NODE_NAME}" ]]; then
+      continue
+    fi
+    printf '%s\n' "${node}"
+  done
+}
+
+workload_allows_pi() {
+  local workload="$1"
+  local candidate
+
+  if [[ -z "${PI_NODE_NAME}" || ${#PI_ELIGIBLE_WORKLOAD_ARRAY[@]} -eq 0 ]]; then
+    return 1
+  fi
+
+  for candidate in "${PI_ELIGIBLE_WORKLOAD_ARRAY[@]}"; do
+    if [[ "${candidate}" == "${workload}" ]]; then
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+eligible_nodes_for_workload() {
+  local workload="$1"
+  local -a nodes=()
+  local node
+
+  if workload_allows_pi "${workload}"; then
+    nodes=("${WORKER_ARRAY[@]}")
+  else
+    while IFS= read -r node; do
+      if [[ -n "${node}" ]]; then
+        nodes+=("${node}")
+      fi
+    done < <(non_pi_worker_nodes)
+
+    if (( ${#nodes[@]} == 0 )); then
+      nodes=("${WORKER_ARRAY[@]}")
+    fi
+  fi
+
+  printf '%s\n' "${nodes[*]}"
 }
 
 extract_request_value() {
@@ -447,6 +500,8 @@ baseline_target_for() {
   local trial="$1"
   local phase_name="$2"
   local workload="$3"
+  local eligible_nodes="${4:-${WORKER_NODES}}"
+  local -a eligible_array=()
   local phase_index=0
   local workload_index=-1
   local phases_per_trial
@@ -454,7 +509,9 @@ baseline_target_for() {
   local decision_index
   local i
 
-  if (( ${#WORKER_ARRAY[@]} == 0 )); then
+  read -r -a eligible_array <<< "${eligible_nodes}"
+
+  if (( ${#eligible_array[@]} == 0 )); then
     echo "ERROR: WORKER_NODES must define at least one eligible worker for baseline placement" >&2
     exit 1
   fi
@@ -499,7 +556,7 @@ baseline_target_for() {
   decisions_per_trial=$(( phases_per_trial * ${#WORKLOAD_ARRAY[@]} ))
   decision_index=$(( ((trial - 1) * decisions_per_trial) + (phase_index * ${#WORKLOAD_ARRAY[@]}) + workload_index ))
 
-  echo "${WORKER_ARRAY[$(( decision_index % ${#WORKER_ARRAY[@]} ))]}"
+  echo "${eligible_array[$(( decision_index % ${#eligible_array[@]} ))]}"
 }
 
 stress_cpu_workers_for_target() {
@@ -775,7 +832,8 @@ run_decision() {
   local output_csv="${BASELINE_CSV}"
   local scheduler_name=""
   local node_name=""
-  local eligible_nodes="${WORKER_NODES}"
+  local eligible_nodes=""
+  local -a eligible_node_array=()
   local workload_cpu_m
   local workload_memory_mib
   local decision_total_score=""
@@ -789,6 +847,13 @@ run_decision() {
 
   workload_cpu_m="$(workload_cpu_millicores "${workload}")"
   workload_memory_mib="$(workload_memory_mib "${workload}")"
+  eligible_nodes="$(eligible_nodes_for_workload "${workload}")"
+  read -r -a eligible_node_array <<< "${eligible_nodes}"
+
+  if (( ${#eligible_node_array[@]} == 0 )); then
+    echo "ERROR: no eligible nodes resolved for workload ${workload}" >&2
+    exit 1
+  fi
 
   if [[ "${arm}" == "custom" ]]; then
     seed_custom_history_if_needed
@@ -799,7 +864,7 @@ run_decision() {
   if [[ "${arm}" == "baseline" ]]; then
     case "${BASELINE_DECISION_MODE}" in
       matched_round_robin_and_pin)
-        expected_node="$(baseline_target_for "${trial}" "${phase_name}" "${workload}")"
+        expected_node="$(baseline_target_for "${trial}" "${phase_name}" "${workload}" "${eligible_nodes}")"
         node_name="${expected_node}"
         ;;
       default_scheduler)
@@ -819,7 +884,7 @@ run_decision() {
     "${PYTHON_BIN}" "${RANK_SCRIPT}" \
       --input "${CUSTOM_HISTORY}" \
       --model-dir "${MODEL_DIR_PATH}" \
-      --eligible-nodes "${WORKER_ARRAY[@]}" \
+      --eligible-nodes "${eligible_node_array[@]}" \
       --window "${WINDOW}" \
       --pred-weight "${PRED_WEIGHT}" \
       --anomaly-weight "${ANOMALY_WEIGHT}" \
@@ -858,7 +923,7 @@ run_decision() {
     node_name="${expected_node}"
   fi
 
-  echo "Deploying ${pod_name} (arm=${arm}, phase=${phase_name}, workload=${workload}, target=${expected_node:-scheduler-driven})" | tee -a "${LOG_DIR}/stage_b.log"
+  echo "Deploying ${pod_name} (arm=${arm}, phase=${phase_name}, workload=${workload}, target=${expected_node:-scheduler-driven}, eligible_nodes=${eligible_nodes})" | tee -a "${LOG_DIR}/stage_b.log"
   apply_workload "${workload}" "${pod_name}" "${scheduler_name}" "${node_name}" "${eligible_nodes}"
   collect_metrics \
     "${pod_name}" \
@@ -933,6 +998,7 @@ done
 "${PYTHON_BIN}" "${ANALYSE_SCRIPT}" \
   --baseline "${BASELINE_CSV}" \
   --custom "${CUSTOM_CSV}" \
+  --pi-node-name "${PI_NODE_NAME:-raspberrypi}" \
   --node-capacities "${CAPACITY_JSON}" \
   --output "${SUMMARY_JSON}" | tee -a "${LOG_DIR}/stage_b.log"
 
@@ -949,6 +1015,8 @@ worker_nodes=${WORKER_NODES}
 nodes=${NODES}
 runs_per_phase=${STAGE_B_RUNS}
 workloads=${STAGE_B_WORKLOADS}
+pi_node_name=${PI_NODE_NAME}
+pi_eligible_workloads=${PI_ELIGIBLE_WORKLOADS}
 arm_order_mode=${STAGE_B_ARM_ORDER_MODE}
 warmup_samples=${STAGE_B_WARMUP_SAMPLES}
 warmup_interval_s=${STAGE_B_WARMUP_INTERVAL}

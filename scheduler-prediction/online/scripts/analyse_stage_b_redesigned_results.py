@@ -100,13 +100,38 @@ def capacity_alignment_from_counts(node_counts: dict, node_capacities: dict | No
     return round(max(0.0, score), 4)
 
 
-def summarize(df: pd.DataFrame, node_capacities: dict | None = None) -> dict:
+def pi_breakdown(df: pd.DataFrame, pi_node_name: str) -> dict:
+    if "node" not in df.columns:
+        return {
+            "pi_node_name": pi_node_name,
+            "pi_placements": None,
+            "pi_placement_rate_percent": None,
+            "non_pi_placements": None,
+            "non_pi_placement_rate_percent": None,
+        }
+
+    node_series = df["node"].fillna("").astype(str).str.strip()
+    pi_mask = node_series == pi_node_name
+    non_empty_mask = node_series != ""
+    non_pi_mask = (~pi_mask) & non_empty_mask
+
+    return {
+        "pi_node_name": pi_node_name,
+        "pi_placements": int(pi_mask.sum()),
+        "pi_placement_rate_percent": maybe_percent(pi_mask),
+        "non_pi_placements": int(non_pi_mask.sum()),
+        "non_pi_placement_rate_percent": maybe_percent(non_pi_mask),
+    }
+
+
+def summarize(df: pd.DataFrame, node_capacities: dict | None = None, pi_node_name: str = "raspberrypi") -> dict:
     node_counts = df["node"].value_counts().to_dict() if "node" in df.columns else {}
+    pi_summary = pi_breakdown(df, pi_node_name)
 
     workloads = {}
     if "workload_type" in df.columns:
         for workload, subset in df.groupby("workload_type"):
-            workloads[workload] = {
+            workload_summary = {
                 "count": int(len(subset)),
                 "avg_scheduling_latency_s": maybe_float(subset["scheduling_latency_s"].mean()),
                 "avg_startup_time_s": maybe_float(subset["startup_time_s"].mean()),
@@ -115,6 +140,8 @@ def summarize(df: pd.DataFrame, node_capacities: dict | None = None) -> dict:
                 if "chosen_relative_cpu" in subset.columns
                 else None,
             }
+            workload_summary.update(pi_breakdown(subset, pi_node_name))
+            workloads[workload] = workload_summary
 
     summary = {
         "total_pods": int(len(df)),
@@ -130,6 +157,11 @@ def summarize(df: pd.DataFrame, node_capacities: dict | None = None) -> dict:
         "high_contention_rate_percent": maybe_percent(df["high_contention"] == 1)
         if "high_contention" in df.columns
         else None,
+        "pi_node_name": pi_summary["pi_node_name"],
+        "pi_placements": pi_summary["pi_placements"],
+        "pi_placement_rate_percent": pi_summary["pi_placement_rate_percent"],
+        "non_pi_placements": pi_summary["non_pi_placements"],
+        "non_pi_placement_rate_percent": pi_summary["non_pi_placement_rate_percent"],
         "workloads": workloads,
     }
 
@@ -178,23 +210,25 @@ def summarize(df: pd.DataFrame, node_capacities: dict | None = None) -> dict:
     return summary
 
 
-def summarize_phases(df: pd.DataFrame, node_capacities: dict | None = None) -> dict:
+def summarize_phases(df: pd.DataFrame, node_capacities: dict | None = None, pi_node_name: str = "raspberrypi") -> dict:
     phases = {}
     for phase, subset in df.groupby("phase"):
-        phases[phase] = summarize(subset, node_capacities=node_capacities)
+        phases[phase] = summarize(subset, node_capacities=node_capacities, pi_node_name=pi_node_name)
     return phases
 
 
-def summarize_phase_workloads(df: pd.DataFrame) -> dict:
+def summarize_phase_workloads(df: pd.DataFrame, pi_node_name: str = "raspberrypi") -> dict:
     out = {}
     grouped = df.groupby(["phase", "workload_type"])
     for (phase, workload), subset in grouped:
-        out.setdefault(phase, {})[workload] = {
+        phase_workload_summary = {
             "count": int(len(subset)),
             "avg_scheduling_latency_s": maybe_float(subset["scheduling_latency_s"].mean()),
             "avg_startup_time_s": maybe_float(subset["startup_time_s"].mean()),
             "avg_total_time_s": maybe_float(subset["total_time_s"].mean()),
         }
+        phase_workload_summary.update(pi_breakdown(subset, pi_node_name))
+        out.setdefault(phase, {})[workload] = phase_workload_summary
     return out
 
 
@@ -214,6 +248,7 @@ def diff_simple(custom: dict, baseline: dict) -> dict:
         "startup_time_delta_s": maybe_delta(custom, baseline, "avg_startup_time_s"),
         "total_time_delta_s": maybe_delta(custom, baseline, "avg_total_time_s"),
         "high_contention_rate_delta_pct": maybe_delta(custom, baseline, "high_contention_rate_percent", 2),
+        "pi_placement_rate_delta_pct": maybe_delta(custom, baseline, "pi_placement_rate_percent", 2),
         "stress_target_placement_delta_pct": maybe_delta(custom, baseline, "stress_target_placement_rate_percent", 2),
         "stress_target_avoidance_delta_pct": maybe_delta(custom, baseline, "stress_target_avoidance_rate_percent", 2),
         "expected_node_match_delta_pct": maybe_delta(custom, baseline, "expected_node_match_rate_percent", 2),
@@ -387,6 +422,12 @@ def phase_workload_comparison(custom_pw: dict, baseline_pw: dict) -> dict:
                     baseline_pw[phase][workload],
                     "avg_total_time_s",
                 ),
+                "pi_placement_rate_delta_pct": maybe_delta(
+                    custom_pw[phase][workload],
+                    baseline_pw[phase][workload],
+                    "pi_placement_rate_percent",
+                    2,
+                ),
             }
     return out
 
@@ -397,6 +438,7 @@ def main() -> None:
     parser.add_argument("--custom", required=True, help="CSV output from custom arm")
     parser.add_argument("--output", required=True, help="Output JSON summary path")
     parser.add_argument("--node-capacities", help="Optional JSON map of node allocatable capacity")
+    parser.add_argument("--pi-node-name", default="raspberrypi", help="Node name treated as the Pi worker in heterogeneous runs")
     args = parser.parse_args()
 
     baseline_path = Path(args.baseline)
@@ -417,12 +459,12 @@ def main() -> None:
     baseline_df = add_phase_column(pd.read_csv(baseline_path))
     custom_df = add_phase_column(pd.read_csv(custom_path))
 
-    baseline_summary = summarize(baseline_df, node_capacities=node_capacities)
-    custom_summary = summarize(custom_df, node_capacities=node_capacities)
-    baseline_phases = summarize_phases(baseline_df, node_capacities=node_capacities)
-    custom_phases = summarize_phases(custom_df, node_capacities=node_capacities)
-    baseline_phase_workloads = summarize_phase_workloads(baseline_df)
-    custom_phase_workloads = summarize_phase_workloads(custom_df)
+    baseline_summary = summarize(baseline_df, node_capacities=node_capacities, pi_node_name=args.pi_node_name)
+    custom_summary = summarize(custom_df, node_capacities=node_capacities, pi_node_name=args.pi_node_name)
+    baseline_phases = summarize_phases(baseline_df, node_capacities=node_capacities, pi_node_name=args.pi_node_name)
+    custom_phases = summarize_phases(custom_df, node_capacities=node_capacities, pi_node_name=args.pi_node_name)
+    baseline_phase_workloads = summarize_phase_workloads(baseline_df, pi_node_name=args.pi_node_name)
+    custom_phase_workloads = summarize_phase_workloads(custom_df, pi_node_name=args.pi_node_name)
 
     comparison = diff_simple(custom_summary, baseline_summary)
     has_full_cols = all(
@@ -441,6 +483,7 @@ def main() -> None:
             "baseline_csv": baseline_path.as_posix(),
             "custom_csv": custom_path.as_posix(),
             "node_capacities": args.node_capacities,
+            "pi_node_name": args.pi_node_name,
         },
         "locked_utility_weights": DEFAULT_UTILITY_WEIGHTS,
         "latency_scale_ms": LATENCY_SCALE_MS,
