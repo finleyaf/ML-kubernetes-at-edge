@@ -1,7 +1,7 @@
 \chapter{Results, Evaluation and Discussion}
 \label{chapter5}
 
-This chapter reports the final authoritative online comparison from the homogeneous-worker Stage B experiment. Both arms were restricted to \texttt{k3s-worker-2}, \texttt{k3s-worker-3}, and \texttt{k3s-worker-4}; the baseline arm was scheduled by the unmodified \texttt{default-scheduler}, while the custom arm used the locked safety-first ranker described in Chapters~\ref{chapter3} and \ref{chapter4}. The results in this chapter are taken from the final \texttt{stage\_b\_summary.json} and interpreted against the hypotheses defined in Chapter~\ref{chapter3}.
+This chapter reports the final authoritative online comparison from the homogeneous-worker Stage B experiment. Both arms were restricted to \texttt{k3s-worker-2}, \texttt{k3s-worker-3}, and \texttt{k3s-worker-4}; the baseline arm was scheduled by the unmodified \texttt{default-scheduler}, while the custom arm used the locked safety-first ranker described in Chapters~\ref{chapter3} and \ref{chapter4}. The results in this chapter are taken from the final \texttt{stage\_b\_summary.json} and interpreted against the hypotheses defined in Chapter~\ref{chapter3}. Where relevant, the discussion also refers to the completed Pi-inclusive extension only as supplementary limitation evidence rather than as part of the claim-bearing hypothesis test.
 
 
 \section{Online Experiment Results}
@@ -138,6 +138,13 @@ The final protocol matters as much as the raw metric deltas. Both arms were cons
 Restricting the final comparison to a homogeneous worker subset was also methodologically important. The literature reviewed in Chapter~\ref{chapter1} notes that the default scheduler is primarily designed for comparatively homogeneous resources \cite{liu2024dynamic}. Using the three comparable workers therefore keeps the baseline defensible, while still exposing both arms to live dynamic load, rotating stress targets, and one-second telemetry.
 
 
+\subsection{Completed Pi-Inclusive Extension}
+
+A supplementary Pi-inclusive Stage C extension was completed after the main Stage B protocol had been fixed. In that extension, standard workloads remained restricted to the three cloud workers, while only the lighter Pi-fit workloads were allowed to consider \texttt{raspberrypi}. The extension did not support a positive heterogeneous-transfer claim. The baseline arm placed 40 of 240 pods on the Pi (16.67\%), whereas the custom arm placed only 2 of 240 (0.83\%). Relative to the baseline arm, the custom arm's utility fell by 13.10 and its high-contention rate increased by 22.92 percentage points.
+
+This completed extension is therefore interpreted as limitation evidence rather than as contradictory evidence against the main claim. The current safety-first ranker transferred conservatively to the mixed-capacity worker pool and largely avoided the Pi even when Pi-fit workloads made it eligible.
+
+
 \subsection{Comparison with Related Work}
 
 The final result is consistent with the broader literature on dynamic edge scheduling. Liu et al.~argue that Kubernetes scheduling in collaborative edge environments benefits from load-aware resource optimisation beyond static requests \cite{liu2024dynamic}. Rasouli et al.~show that failure- and latency-aware decision surfaces matter for edge reliability \cite{rasouli2025false}. Fritzsche et al.~demonstrate that lightweight anomaly detection is practical on edge Kubernetes clusters \cite{fritzsche2024lightweight}. The present work combines those ideas in a lightweight form: anomaly awareness is retained, but it is coupled to short-horizon prediction and workload-aware placement rather than used as a standalone warning signal.
@@ -153,7 +160,7 @@ Several limitations remain.
 \begin{itemize}
 \item The cluster is still modest relative to production edge deployments, so the result should be interpreted as controlled evidence rather than as a universal scheduler verdict.
 \item The live experiment relies on controlled stress injection rather than organic failure cascades, network disruption, or long-running multi-tenant interference.
-\item The final authoritative comparison is restricted to a homogeneous worker subset. This improves internal validity for the baseline comparison, but it leaves Pi-inclusive heterogeneity analysis for future work.
+\item The final authoritative comparison is restricted to a homogeneous worker subset. This improves internal validity for the baseline comparison, and the completed Pi-inclusive extension shows that positive heterogeneous transfer is not yet demonstrated by the current ranker.
 \item The predictor remains a lightweight linear family and may underfit more complex mixed-resource or long-horizon behaviour.
 \item Placement fairness and capacity alignment declined slightly under the custom arm, showing that the safety-first policy accepts a small trade-off in evenness to avoid busier nodes.
 \end{itemize}
@@ -164,7 +171,7 @@ Several limitations remain.
 
 The final online experiment answers the three research questions positively within the scope of the homogeneous-worker comparison. For \textbf{RQ1}, the custom anomaly-aware, prediction-informed scheduler improved placement quality by increasing safe placements and reducing anomalous and highly contended decisions. For \textbf{RQ2}, these gains were achieved without measurable scheduling-latency overhead and with lower startup and total execution times. For \textbf{RQ3}, the locked hybrid policy family transferred successfully from offline audit to online deployment, as shown by the positive utility delta and the fully traceable model-backed decision path.
 
-Taken together, these results support the central claim of the dissertation: a lightweight scheduler that combines short-horizon prediction, anomaly awareness, and explicit live safety guardrails can outperform the default Kubernetes scheduler on relevant placement outcomes in a controlled edge-style setting.
+Taken together, these results support the central claim of the dissertation: a lightweight scheduler that combines short-horizon prediction, anomaly awareness, and explicit live safety guardrails can outperform the default Kubernetes scheduler on relevant placement outcomes in a controlled edge-style setting. A completed supplementary Pi-inclusive extension exposed a remaining limitation, however: the current safety-first ranker does not yet translate that advantage into effective use of a mixed-capacity worker pool.
 
 
 \section{Future Work}
@@ -173,7 +180,7 @@ Taken together, these results support the central claim of the dissertation: a l
 The most important next steps are:
 
 \begin{itemize}
-\item repeat the authoritative comparison on a deliberately mixed-capacity cluster, including the Raspberry Pi, with a baseline design that remains methodologically defensible
+\item redesign the heterogeneous ranking logic for mixed-capacity workers, then rerun the Pi-inclusive extension with workload-specific eligibility and a defensible common feasible set
 \item extend the campaign to larger worker sets and longer runs for tighter uncertainty estimates
 \item evaluate richer predictors for mixed-resource regimes while preserving lightweight deployment constraints
 \item introduce more organic fault, anomaly, and network-disruption scenarios

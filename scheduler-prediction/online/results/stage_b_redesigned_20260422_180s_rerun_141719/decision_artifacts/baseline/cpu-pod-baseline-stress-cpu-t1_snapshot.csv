@@ -1,2 +1,0 @@
-timestamp,node,cpu_user,cpu_system,cpu_iowait,ram_used,net_received,net_sent,load1
-1776864293,k3s-worker-3,6.0301512,3.0150751,0,704.2188,38.82531,259.7197,0.03

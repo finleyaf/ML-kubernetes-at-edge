@@ -1,2 +1,0 @@
-pod_name,workload_type,node,scheduling_latency_s,startup_time_s,total_time_s,creation_time,scheduled_time,started_time
-cpu-pod-custom-normal-1,cpu,,,,,1774999853.0,,

@@ -20,7 +20,7 @@ else
   source "${ENV_FILE}"
 fi
 
-MODEL_DIR="${MODEL_DIR:-scheduler-prediction/prediction/models/phase4_weighted_calibrated_expanded_novel_20_safe}"
+MODEL_DIR="${MODEL_DIR:-scheduler-prediction/prediction/models/phase4_weighted_calibrated_fair_cohort_20260423_183525_retry}"
 WINDOW="${WINDOW:-5}"
 PRED_WEIGHT="${PRED_WEIGHT:-0.9}"
 ANOMALY_WEIGHT="${ANOMALY_WEIGHT:-0.1}"
