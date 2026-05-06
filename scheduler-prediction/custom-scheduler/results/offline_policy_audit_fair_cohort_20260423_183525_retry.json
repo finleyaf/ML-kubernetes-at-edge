@@ -1,0 +1,322 @@
+{
+  "config": {
+    "stage": "audit_fixed_config",
+    "runs_dir": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs",
+    "model_dir": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/scheduler-prediction/prediction/models/phase4_weighted_calibrated_fair_cohort_20260423_183525_retry",
+    "protocol_path": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/scheduler-prediction/custom-scheduler/evaluation_protocol.json",
+    "split_config_source": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/scheduler-prediction/prediction/results/phase4_validation/phase4_validation_fair_cohort_20260423_183525_retry/locked_predictor_config.json",
+    "selection_source": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/scheduler-prediction/custom-scheduler/results/offline_policy_selection_fair_cohort_20260423_183525_retry.json",
+    "window": 5,
+    "warmup": 24,
+    "anomaly_history": 45,
+    "anomaly_source": "nsa",
+    "nsa_num_detectors": 120,
+    "nsa_radius": 0.9,
+    "validation_runs": [
+      "run_043",
+      "run_044",
+      "run_045",
+      "run_046",
+      "run_047",
+      "run_048",
+      "run_049",
+      "run_050",
+      "run_051"
+    ],
+    "test_runs": [
+      "run_052",
+      "run_053",
+      "run_054",
+      "run_055"
+    ]
+  },
+  "protocol": {
+    "version": 1,
+    "scheduler": {
+      "adaptive_weighting": true,
+      "adaptive_risk_low": 0.2,
+      "adaptive_risk_high": 0.7,
+      "adaptive_max_shift": 0.35,
+      "adaptive_min_prediction_weight": 0.05,
+      "adaptive_max_prediction_weight": 0.95
+    },
+    "selection": {
+      "objective": "utility",
+      "utility_weights": {
+        "safe_placement_rate": 0.45,
+        "anomalous_rate": 0.25,
+        "high_contention_decision_rate": 0.15,
+        "latency": 0.1,
+        "placement_fairness_percent": 0.05
+      },
+      "latency_scale_ms": 1.0,
+      "contention_relative_cpu_threshold": 1.1,
+      "tie_breakers": [
+        "hybrid_safe_rate",
+        "hybrid_anomalous",
+        "hybrid_low_contention",
+        "hybrid_high_fairness",
+        "hybrid_latency"
+      ]
+    },
+    "data_split": {
+      "freeze_test_runs": true,
+      "test_runs": [
+        "run_014",
+        "run_015",
+        "run_019",
+        "run_020"
+      ]
+    },
+    "consistency_checks": {
+      "hybrid_vs_prediction_only": {
+        "min_positive_safe_delta_fraction": 0.75,
+        "require_nonpositive_anomalous_delta": true
+      }
+    }
+  },
+  "best_validation_config": {
+    "pred_weight": 0.9,
+    "anomaly_weight": 0.1,
+    "z_threshold": 2.5,
+    "validation_summary": {
+      "runs": [
+        "run_043",
+        "run_044",
+        "run_045",
+        "run_046",
+        "run_047",
+        "run_048",
+        "run_049",
+        "run_050",
+        "run_051"
+      ],
+      "prediction_only": {
+        "decisions": 1602,
+        "safe_placements": 1494,
+        "anomalous_placements": 108,
+        "safe_placement_rate": 93.26,
+        "avg_decision_latency_ms": 0.6999,
+        "p95_decision_latency_ms": 0.7292,
+        "anomalous_rate": 6.74,
+        "placement_fairness_jain": 0.707371,
+        "placement_fairness_percent": 70.74,
+        "high_contention_decision_rate": 27.97,
+        "mean_relative_cpu_load": 0.8267,
+        "mean_chosen_observed_cpu": 12.0994,
+        "avg_effective_prediction_weight": 1.0,
+        "avg_effective_anomaly_weight": 0.0,
+        "anomaly_weight_gt_prediction_fraction": 0.0,
+        "near_anomaly_only_fraction": 0.0,
+        "near_prediction_only_fraction": 1.0,
+        "utility_score": 39.55351
+      },
+      "anomaly_only": {
+        "decisions": 1602,
+        "safe_placements": 1106,
+        "anomalous_placements": 496,
+        "safe_placement_rate": 69.04,
+        "avg_decision_latency_ms": 0.6237,
+        "p95_decision_latency_ms": 0.6425,
+        "anomalous_rate": 30.96,
+        "placement_fairness_jain": 0.420671,
+        "placement_fairness_percent": 42.07,
+        "high_contention_decision_rate": 55.68,
+        "mean_relative_cpu_load": 1.4756,
+        "mean_chosen_observed_cpu": 29.766,
+        "avg_effective_prediction_weight": 0.0,
+        "avg_effective_anomaly_weight": 1.0,
+        "anomaly_weight_gt_prediction_fraction": 1.0,
+        "near_anomaly_only_fraction": 1.0,
+        "near_prediction_only_fraction": 0.0,
+        "utility_score": 17.01713
+      },
+      "hybrid": {
+        "decisions": 1602,
+        "safe_placements": 1490,
+        "anomalous_placements": 112,
+        "safe_placement_rate": 93.01,
+        "avg_decision_latency_ms": 0.622,
+        "p95_decision_latency_ms": 0.639,
+        "anomalous_rate": 6.99,
+        "placement_fairness_jain": 0.70391,
+        "placement_fairness_percent": 70.39,
+        "high_contention_decision_rate": 28.03,
+        "mean_relative_cpu_load": 0.8296,
+        "mean_chosen_observed_cpu": 12.1819,
+        "avg_effective_prediction_weight": 0.9497,
+        "avg_effective_anomaly_weight": 0.0503,
+        "anomaly_weight_gt_prediction_fraction": 0.0,
+        "near_anomaly_only_fraction": 0.0,
+        "near_prediction_only_fraction": 0.9969,
+        "utility_score": 39.3598
+      },
+      "comparisons": {
+        "anomaly_only_vs_prediction_only": {
+          "safe_placement_rate_delta": -24.22,
+          "anomalous_placements_delta": 388,
+          "anomalous_rate_delta": 24.22,
+          "avg_latency_ms_delta": -0.0762,
+          "high_contention_rate_delta": 27.71,
+          "placement_fairness_delta": -28.67,
+          "avg_effective_anomaly_weight_delta": 1.0,
+          "near_anomaly_only_fraction_delta": 1.0,
+          "utility_delta": -22.53638
+        },
+        "hybrid_vs_prediction_only": {
+          "safe_placement_rate_delta": -0.25,
+          "anomalous_placements_delta": 4,
+          "anomalous_rate_delta": 0.25,
+          "avg_latency_ms_delta": -0.0779,
+          "high_contention_rate_delta": 0.06,
+          "placement_fairness_delta": -0.35,
+          "avg_effective_anomaly_weight_delta": 0.0503,
+          "near_anomaly_only_fraction_delta": 0.0,
+          "utility_delta": -0.19371
+        }
+      }
+    }
+  },
+  "consistency_test": {
+    "per_run": [
+      {
+        "run_id": "run_052",
+        "safe_placement_rate_delta": 0.0,
+        "anomalous_placements_delta": 0,
+        "anomalous_rate_delta": 0.0,
+        "avg_latency_ms_delta": -0.0859,
+        "utility_delta": 0.25959,
+        "is_positive_safe_delta": false,
+        "is_nonpositive_anom_delta": true
+      },
+      {
+        "run_id": "run_053",
+        "safe_placement_rate_delta": 0.0,
+        "anomalous_placements_delta": 0,
+        "anomalous_rate_delta": 0.0,
+        "avg_latency_ms_delta": -0.0781,
+        "utility_delta": 0.11681,
+        "is_positive_safe_delta": false,
+        "is_nonpositive_anom_delta": true
+      },
+      {
+        "run_id": "run_054",
+        "safe_placement_rate_delta": 0.0,
+        "anomalous_placements_delta": 0,
+        "anomalous_rate_delta": 0.0,
+        "avg_latency_ms_delta": -0.0781,
+        "utility_delta": 0.33881,
+        "is_positive_safe_delta": false,
+        "is_nonpositive_anom_delta": true
+      },
+      {
+        "run_id": "run_055",
+        "safe_placement_rate_delta": 0.0,
+        "anomalous_placements_delta": 0,
+        "anomalous_rate_delta": 0.0,
+        "avg_latency_ms_delta": -0.0832,
+        "utility_delta": -0.03918,
+        "is_positive_safe_delta": false,
+        "is_nonpositive_anom_delta": true
+      }
+    ],
+    "summary": {
+      "positive_safe_delta_fraction": 0.0,
+      "required_positive_safe_delta_fraction": 0.75,
+      "require_nonpositive_anomalous_delta": true,
+      "passed": false
+    }
+  },
+  "untouched_test_evaluation": {
+    "runs": [
+      "run_052",
+      "run_053",
+      "run_054",
+      "run_055"
+    ],
+    "prediction_only": {
+      "decisions": 698,
+      "safe_placements": 633,
+      "anomalous_placements": 65,
+      "safe_placement_rate": 90.69,
+      "avg_decision_latency_ms": 0.7111,
+      "p95_decision_latency_ms": 0.7807,
+      "anomalous_rate": 9.31,
+      "placement_fairness_jain": 0.999577,
+      "placement_fairness_percent": 99.96,
+      "high_contention_decision_rate": 32.09,
+      "mean_relative_cpu_load": 0.8916,
+      "mean_chosen_observed_cpu": 13.0523,
+      "avg_effective_prediction_weight": 1.0,
+      "avg_effective_anomaly_weight": 0.0,
+      "anomaly_weight_gt_prediction_fraction": 0.0,
+      "near_anomaly_only_fraction": 0.0,
+      "near_prediction_only_fraction": 1.0,
+      "utility_score": 38.59639
+    },
+    "anomaly_only": {
+      "decisions": 698,
+      "safe_placements": 544,
+      "anomalous_placements": 154,
+      "safe_placement_rate": 77.94,
+      "avg_decision_latency_ms": 0.6318,
+      "p95_decision_latency_ms": 0.6529,
+      "anomalous_rate": 22.06,
+      "placement_fairness_jain": 0.557871,
+      "placement_fairness_percent": 55.79,
+      "high_contention_decision_rate": 46.42,
+      "mean_relative_cpu_load": 1.2634,
+      "mean_chosen_observed_cpu": 23.9746,
+      "avg_effective_prediction_weight": 0.0,
+      "avg_effective_anomaly_weight": 1.0,
+      "anomaly_weight_gt_prediction_fraction": 1.0,
+      "near_anomaly_only_fraction": 1.0,
+      "near_prediction_only_fraction": 0.0,
+      "utility_score": 25.32132
+    },
+    "hybrid": {
+      "decisions": 698,
+      "safe_placements": 633,
+      "anomalous_placements": 65,
+      "safe_placement_rate": 90.69,
+      "avg_decision_latency_ms": 0.6223,
+      "p95_decision_latency_ms": 0.6475,
+      "anomalous_rate": 9.31,
+      "placement_fairness_jain": 0.996364,
+      "placement_fairness_percent": 99.64,
+      "high_contention_decision_rate": 31.66,
+      "mean_relative_cpu_load": 0.8926,
+      "mean_chosen_observed_cpu": 13.0956,
+      "avg_effective_prediction_weight": 0.9497,
+      "avg_effective_anomaly_weight": 0.0503,
+      "anomaly_weight_gt_prediction_fraction": 0.0,
+      "near_anomaly_only_fraction": 0.0,
+      "near_prediction_only_fraction": 0.9986,
+      "utility_score": 38.65377
+    },
+    "comparisons": {
+      "anomaly_only_vs_prediction_only": {
+        "safe_placement_rate_delta": -12.75,
+        "anomalous_placements_delta": 89,
+        "anomalous_rate_delta": 12.75,
+        "avg_latency_ms_delta": -0.0793,
+        "high_contention_rate_delta": 14.33,
+        "placement_fairness_delta": -44.17,
+        "avg_effective_anomaly_weight_delta": 1.0,
+        "near_anomaly_only_fraction_delta": 1.0,
+        "utility_delta": -13.27507
+      },
+      "hybrid_vs_prediction_only": {
+        "safe_placement_rate_delta": 0.0,
+        "anomalous_placements_delta": 0,
+        "anomalous_rate_delta": 0.0,
+        "avg_latency_ms_delta": -0.0888,
+        "high_contention_rate_delta": -0.43,
+        "placement_fairness_delta": -0.32,
+        "avg_effective_anomaly_weight_delta": 0.0503,
+        "near_anomaly_only_fraction_delta": 0.0,
+        "utility_delta": 0.05738
+      }
+    }
+  }
+}

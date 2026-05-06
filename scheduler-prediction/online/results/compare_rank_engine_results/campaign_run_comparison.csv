@@ -1,0 +1,7 @@
+run_id,kind,rows,normal_rows,anomalous_rows,anomaly_rate_pct,recommended_node_rows,recommended_node_share_pct,recommended_node_anomaly_rate_pct,other_nodes_anomaly_rate_pct
+run_005,control,309,309,0,0.0,103,33.333,0.0,0.0
+run_006,control,273,273,0,0.0,91,33.333,0.0,0.0
+run_001,stress,636,520,116,18.239,212,33.333,20.755,16.981
+run_002,stress,615,511,104,16.911,205,33.333,23.902,13.415
+run_003,stress,735,591,144,19.592,245,33.333,13.469,22.653
+run_004,stress,663,549,114,17.195,221,33.333,19.91,15.837

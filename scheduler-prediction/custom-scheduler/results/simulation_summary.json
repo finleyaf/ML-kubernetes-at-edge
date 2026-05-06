@@ -1,0 +1,34 @@
+{
+  "config": {
+    "window": 10,
+    "warmup": 15,
+    "pred_weight": 0.6,
+    "anomaly_weight": 0.4,
+    "workers": [
+      "k3s-worker-2",
+      "k3s-worker-3"
+    ]
+  },
+  "hybrid_scheduler": {
+    "decisions": 194,
+    "anomalous_placements": 13,
+    "safe_placements": 181,
+    "safe_placement_rate": 93.3,
+    "avg_total_score": 0.2537,
+    "avg_prediction_score": 0.243,
+    "avg_anomaly_score": 0.2698
+  },
+  "prediction_only_scheduler": {
+    "decisions": 194,
+    "anomalous_placements": 12,
+    "safe_placements": 182,
+    "safe_placement_rate": 93.81,
+    "avg_total_score": 0.2317,
+    "avg_prediction_score": 0.2317,
+    "avg_anomaly_score": 0.3022
+  },
+  "comparison": {
+    "safe_placement_rate_delta": -0.51,
+    "anomalous_placements_delta": 1
+  }
+}

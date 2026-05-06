@@ -1,0 +1,317 @@
+{
+  "config": {
+    "runs_dir": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs",
+    "expected_nodes": [
+      "k3s-control",
+      "k3s-worker-2",
+      "k3s-worker-3",
+      "k3s-worker-4",
+      "raspberrypi"
+    ],
+    "min_rows": 250,
+    "min_anomaly_ratio": 0.05
+  },
+  "summary": {
+    "runs_total": 13,
+    "status_counts": {
+      "pass": 13,
+      "warn": 0,
+      "fail": 0
+    },
+    "rows_total": 13060,
+    "anomaly_rows_total": 1613,
+    "anomaly_ratio_total": 0.1235,
+    "stress_runs": 13,
+    "control_runs": 0,
+    "stress_avg_anomaly_ratio": 0.1235,
+    "control_anomaly_rows_total": 0
+  },
+  "runs": [
+    {
+      "run_id": "run_043",
+      "status": "pass",
+      "issues": [],
+      "kind": "stress",
+      "rows": 1000,
+      "anomaly_rows": 118,
+      "anomaly_ratio": 0.118,
+      "node_counts": {
+        "k3s-control": 200,
+        "k3s-worker-2": 200,
+        "k3s-worker-3": 200,
+        "k3s-worker-4": 200,
+        "raspberrypi": 200
+      },
+      "timestamp_min": 1776965875,
+      "timestamp_max": 1776966503,
+      "timestamp_span_s": 628,
+      "missing_columns": [],
+      "null_cells": 0,
+      "phase_count": 7
+    },
+    {
+      "run_id": "run_044",
+      "status": "pass",
+      "issues": [],
+      "kind": "stress",
+      "rows": 1015,
+      "anomaly_rows": 124,
+      "anomaly_ratio": 0.1222,
+      "node_counts": {
+        "k3s-control": 203,
+        "k3s-worker-2": 203,
+        "k3s-worker-3": 203,
+        "k3s-worker-4": 203,
+        "raspberrypi": 203
+      },
+      "timestamp_min": 1776966510,
+      "timestamp_max": 1776967175,
+      "timestamp_span_s": 665,
+      "missing_columns": [],
+      "null_cells": 0,
+      "phase_count": 7
+    },
+    {
+      "run_id": "run_045",
+      "status": "pass",
+      "issues": [],
+      "kind": "stress",
+      "rows": 1100,
+      "anomaly_rows": 140,
+      "anomaly_ratio": 0.1273,
+      "node_counts": {
+        "k3s-control": 220,
+        "k3s-worker-2": 220,
+        "k3s-worker-3": 220,
+        "k3s-worker-4": 220,
+        "raspberrypi": 220
+      },
+      "timestamp_min": 1776967178,
+      "timestamp_max": 1776967850,
+      "timestamp_span_s": 672,
+      "missing_columns": [],
+      "null_cells": 0,
+      "phase_count": 7
+    },
+    {
+      "run_id": "run_046",
+      "status": "pass",
+      "issues": [],
+      "kind": "stress",
+      "rows": 985,
+      "anomaly_rows": 124,
+      "anomaly_ratio": 0.1259,
+      "node_counts": {
+        "k3s-control": 197,
+        "k3s-worker-2": 197,
+        "k3s-worker-3": 197,
+        "k3s-worker-4": 197,
+        "raspberrypi": 197
+      },
+      "timestamp_min": 1776967857,
+      "timestamp_max": 1776968496,
+      "timestamp_span_s": 639,
+      "missing_columns": [],
+      "null_cells": 0,
+      "phase_count": 7
+    },
+    {
+      "run_id": "run_047",
+      "status": "pass",
+      "issues": [],
+      "kind": "stress",
+      "rows": 1030,
+      "anomaly_rows": 131,
+      "anomaly_ratio": 0.1272,
+      "node_counts": {
+        "k3s-control": 206,
+        "k3s-worker-2": 206,
+        "k3s-worker-3": 206,
+        "k3s-worker-4": 206,
+        "raspberrypi": 206
+      },
+      "timestamp_min": 1776968501,
+      "timestamp_max": 1776969161,
+      "timestamp_span_s": 660,
+      "missing_columns": [],
+      "null_cells": 0,
+      "phase_count": 7
+    },
+    {
+      "run_id": "run_048",
+      "status": "pass",
+      "issues": [],
+      "kind": "stress",
+      "rows": 955,
+      "anomaly_rows": 120,
+      "anomaly_ratio": 0.1257,
+      "node_counts": {
+        "k3s-control": 191,
+        "k3s-worker-2": 191,
+        "k3s-worker-3": 191,
+        "k3s-worker-4": 191,
+        "raspberrypi": 191
+      },
+      "timestamp_min": 1776969166,
+      "timestamp_max": 1776969814,
+      "timestamp_span_s": 648,
+      "missing_columns": [],
+      "null_cells": 0,
+      "phase_count": 7
+    },
+    {
+      "run_id": "run_049",
+      "status": "pass",
+      "issues": [],
+      "kind": "stress",
+      "rows": 935,
+      "anomaly_rows": 113,
+      "anomaly_ratio": 0.1209,
+      "node_counts": {
+        "k3s-control": 187,
+        "k3s-worker-2": 187,
+        "k3s-worker-3": 187,
+        "k3s-worker-4": 187,
+        "raspberrypi": 187
+      },
+      "timestamp_min": 1776969819,
+      "timestamp_max": 1776970429,
+      "timestamp_span_s": 610,
+      "missing_columns": [],
+      "null_cells": 0,
+      "phase_count": 7
+    },
+    {
+      "run_id": "run_050",
+      "status": "pass",
+      "issues": [],
+      "kind": "stress",
+      "rows": 1060,
+      "anomaly_rows": 136,
+      "anomaly_ratio": 0.1283,
+      "node_counts": {
+        "k3s-control": 212,
+        "k3s-worker-2": 212,
+        "k3s-worker-3": 212,
+        "k3s-worker-4": 212,
+        "raspberrypi": 212
+      },
+      "timestamp_min": 1776970435,
+      "timestamp_max": 1776971106,
+      "timestamp_span_s": 671,
+      "missing_columns": [],
+      "null_cells": 0,
+      "phase_count": 7
+    },
+    {
+      "run_id": "run_051",
+      "status": "pass",
+      "issues": [],
+      "kind": "stress",
+      "rows": 1010,
+      "anomaly_rows": 125,
+      "anomaly_ratio": 0.1238,
+      "node_counts": {
+        "k3s-control": 202,
+        "k3s-worker-2": 202,
+        "k3s-worker-3": 202,
+        "k3s-worker-4": 202,
+        "raspberrypi": 202
+      },
+      "timestamp_min": 1776971113,
+      "timestamp_max": 1776971757,
+      "timestamp_span_s": 644,
+      "missing_columns": [],
+      "null_cells": 0,
+      "phase_count": 7
+    },
+    {
+      "run_id": "run_052",
+      "status": "pass",
+      "issues": [],
+      "kind": "stress",
+      "rows": 960,
+      "anomaly_rows": 117,
+      "anomaly_ratio": 0.1219,
+      "node_counts": {
+        "k3s-control": 192,
+        "k3s-worker-2": 192,
+        "k3s-worker-3": 192,
+        "k3s-worker-4": 192,
+        "raspberrypi": 192
+      },
+      "timestamp_min": 1776971764,
+      "timestamp_max": 1776972402,
+      "timestamp_span_s": 638,
+      "missing_columns": [],
+      "null_cells": 0,
+      "phase_count": 7
+    },
+    {
+      "run_id": "run_053",
+      "status": "pass",
+      "issues": [],
+      "kind": "stress",
+      "rows": 1015,
+      "anomaly_rows": 125,
+      "anomaly_ratio": 0.1232,
+      "node_counts": {
+        "k3s-control": 203,
+        "k3s-worker-2": 203,
+        "k3s-worker-3": 203,
+        "k3s-worker-4": 203,
+        "raspberrypi": 203
+      },
+      "timestamp_min": 1776972407,
+      "timestamp_max": 1776973066,
+      "timestamp_span_s": 659,
+      "missing_columns": [],
+      "null_cells": 0,
+      "phase_count": 7
+    },
+    {
+      "run_id": "run_054",
+      "status": "pass",
+      "issues": [],
+      "kind": "stress",
+      "rows": 985,
+      "anomaly_rows": 116,
+      "anomaly_ratio": 0.1178,
+      "node_counts": {
+        "k3s-control": 197,
+        "k3s-worker-2": 197,
+        "k3s-worker-3": 197,
+        "k3s-worker-4": 197,
+        "raspberrypi": 197
+      },
+      "timestamp_min": 1776973072,
+      "timestamp_max": 1776973714,
+      "timestamp_span_s": 642,
+      "missing_columns": [],
+      "null_cells": 0,
+      "phase_count": 7
+    },
+    {
+      "run_id": "run_055",
+      "status": "pass",
+      "issues": [],
+      "kind": "stress",
+      "rows": 1010,
+      "anomaly_rows": 124,
+      "anomaly_ratio": 0.1228,
+      "node_counts": {
+        "k3s-control": 202,
+        "k3s-worker-2": 202,
+        "k3s-worker-3": 202,
+        "k3s-worker-4": 202,
+        "raspberrypi": 202
+      },
+      "timestamp_min": 1776973720,
+      "timestamp_max": 1776974343,
+      "timestamp_span_s": 623,
+      "missing_columns": [],
+      "null_cells": 0,
+      "phase_count": 7
+    }
+  ]
+}

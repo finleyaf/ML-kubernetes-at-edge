@@ -1,0 +1,22 @@
+{
+  "best_node": "k3s-worker-2",
+  "ranking": [
+    {
+      "node": "k3s-worker-2",
+      "total_score": 0.2298,
+      "predicted_load": 0.2553,
+      "anomaly_risk": 0.0
+    },
+    {
+      "node": "k3s-worker-3",
+      "total_score": 0.2858,
+      "predicted_load": 0.3176,
+      "anomaly_risk": 0.0
+    }
+  ],
+  "weights": {
+    "prediction": 0.9,
+    "anomaly": 0.1
+  },
+  "anomaly_source": "nsa"
+}

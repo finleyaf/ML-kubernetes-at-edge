@@ -1,0 +1,9 @@
+{
+  "strategy": "loo",
+  "n_splits": null,
+  "runs_total": 20,
+  "rows_total": 12676,
+  "configs_evaluated": 30,
+  "best_config_key": "nsa_w5_d300_r0.1",
+  "best_method": "nsa"
+}

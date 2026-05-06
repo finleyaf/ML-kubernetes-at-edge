@@ -1,0 +1,82 @@
+{
+  "selected_at": "2026-04-23T19:59:13.279058+00:00",
+  "selection_strategy": "rolling_origin_cv_on_dev_runs",
+  "holdout_strategy": "stratified_stress_control",
+  "strict_holdout": [
+    "run_052",
+    "run_053",
+    "run_054",
+    "run_055"
+  ],
+  "development_runs": [
+    "run_043",
+    "run_044",
+    "run_045",
+    "run_046",
+    "run_047",
+    "run_048",
+    "run_049",
+    "run_050",
+    "run_051"
+  ],
+  "config": {
+    "model": "linear_regression",
+    "window": 5,
+    "horizon": 3,
+    "scaling": "MinMaxScaler fit on training runs only"
+  },
+  "cv_linear_performance": {
+    "rmse_mean": 0.10395840977176915,
+    "rmse_ci_low": 0.10395840977176915,
+    "rmse_ci_high": 0.10395840977176915,
+    "mae_mean": 0.03975393212461019,
+    "smape_mean": 58.97154322869611,
+    "folds": 1
+  },
+  "holdout_overall": {
+    "linear": {
+      "rmse_mean": 0.09643497509540366,
+      "mae_mean": 0.03707652952876027,
+      "smape_mean": 59.75869237173661,
+      "num_predictions": 3064
+    },
+    "naive_last": {
+      "rmse_mean": 0.11659688800413537,
+      "mae_mean": 0.03540509531428195,
+      "smape_mean": 38.12032079775469,
+      "num_predictions": 3064
+    },
+    "naive_mean": {
+      "rmse_mean": 0.1101462606414666,
+      "mae_mean": 0.03760216060557718,
+      "smape_mean": 37.86859323791781,
+      "num_predictions": 3064
+    }
+  },
+  "holdout_phase_focus": {
+    "linear": {
+      "baseline": {
+        "rmse_mean": 0.03604552957881048,
+        "mae_mean": 0.018332369241736278,
+        "smape_mean": 54.31819977948502,
+        "num_predictions": 552
+      }
+    },
+    "naive_last": {
+      "baseline": {
+        "rmse_mean": 0.04216311062679403,
+        "mae_mean": 0.015942754011139045,
+        "smape_mean": 31.28175963092074,
+        "num_predictions": 552
+      }
+    },
+    "naive_mean": {
+      "baseline": {
+        "rmse_mean": 0.03309599700048295,
+        "mae_mean": 0.01418304370845106,
+        "smape_mean": 27.915069296206678,
+        "num_predictions": 552
+      }
+    }
+  }
+}

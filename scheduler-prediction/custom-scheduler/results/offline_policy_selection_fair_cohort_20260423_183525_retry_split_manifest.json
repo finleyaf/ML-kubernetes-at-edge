@@ -1,0 +1,22 @@
+{
+  "frozen_by_protocol": false,
+  "protocol_path": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/scheduler-prediction/custom-scheduler/results/evaluation_protocol_selection_fair_cohort_20260423_183525_retry.json",
+  "split_config_source": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/scheduler-prediction/prediction/results/phase4_validation/phase4_validation_fair_cohort_20260423_183525_retry/locked_predictor_config.json",
+  "validation_runs": [
+    "run_043",
+    "run_044",
+    "run_045",
+    "run_046",
+    "run_047",
+    "run_048",
+    "run_049",
+    "run_050",
+    "run_051"
+  ],
+  "test_runs": [
+    "run_052",
+    "run_053",
+    "run_054",
+    "run_055"
+  ]
+}

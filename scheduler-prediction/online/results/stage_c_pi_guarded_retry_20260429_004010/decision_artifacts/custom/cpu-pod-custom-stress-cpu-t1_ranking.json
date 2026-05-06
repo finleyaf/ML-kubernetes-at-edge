@@ -1,0 +1,96 @@
+{
+  "best_node": "k3s-worker-4",
+  "workload_request": {
+    "cpu_millicores": 250.0,
+    "memory_mib": 64.0
+  },
+  "capacity_penalty_factor": 1.0,
+  "adaptive_weighting": false,
+  "adaptive_config": {
+    "risk_low": 0.2,
+    "risk_high": 0.7,
+    "max_shift": 0.35,
+    "min_prediction_weight": 0.05,
+    "max_prediction_weight": 0.95
+  },
+  "safety_config": {
+    "contention_relative_cpu_threshold": 1.1,
+    "contention_penalty_factor": 0.0,
+    "safe_relative_cpu_threshold": 1.1,
+    "unsafe_penalty_factor": 0.0,
+    "avoid_unsafe_nodes": false
+  },
+  "node_capacities": {
+    "k3s-worker-2": {
+      "cpu_millicores": 2000.0,
+      "memory_mib": 1964.9062
+    },
+    "k3s-worker-3": {
+      "cpu_millicores": 2000.0,
+      "memory_mib": 1964.9023
+    },
+    "k3s-worker-4": {
+      "cpu_millicores": 2000.0,
+      "memory_mib": 1964.9102
+    },
+    "raspberrypi": {
+      "cpu_millicores": 4000.0,
+      "memory_mib": 4045.6875
+    }
+  },
+  "ranking": [
+    {
+      "node": "k3s-worker-4",
+      "total_score": 0.2662,
+      "predicted_load": 0.2958,
+      "base_predicted_load": 0.1708,
+      "anomaly_risk": 0.0,
+      "weight_prediction": 0.9,
+      "weight_anomaly": 0.1,
+      "observed_relative_cpu": 0.6848,
+      "cpu_request_fraction": 0.125,
+      "memory_request_fraction": 0.0326,
+      "capacity_penalty": 0.125,
+      "contention_penalty": 0.0,
+      "safety_penalty": 0.0,
+      "prediction_source": "model"
+    },
+    {
+      "node": "k3s-worker-2",
+      "total_score": 0.2687,
+      "predicted_load": 0.2986,
+      "base_predicted_load": 0.1736,
+      "anomaly_risk": 0.0,
+      "weight_prediction": 0.9,
+      "weight_anomaly": 0.1,
+      "observed_relative_cpu": 1.7609,
+      "cpu_request_fraction": 0.125,
+      "memory_request_fraction": 0.0326,
+      "capacity_penalty": 0.125,
+      "contention_penalty": 0.0,
+      "safety_penalty": 0.0,
+      "prediction_source": "model"
+    },
+    {
+      "node": "k3s-worker-3",
+      "total_score": 0.2819,
+      "predicted_load": 0.3132,
+      "base_predicted_load": 0.1882,
+      "anomaly_risk": 0.0,
+      "weight_prediction": 0.9,
+      "weight_anomaly": 0.1,
+      "observed_relative_cpu": 0.5543,
+      "cpu_request_fraction": 0.125,
+      "memory_request_fraction": 0.0326,
+      "capacity_penalty": 0.125,
+      "contention_penalty": 0.0,
+      "safety_penalty": 0.0,
+      "prediction_source": "model"
+    }
+  ],
+  "weights": {
+    "prediction": 0.9,
+    "anomaly": 0.1
+  },
+  "anomaly_source": "nsa"
+}

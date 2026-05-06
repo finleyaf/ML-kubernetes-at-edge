@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: cpu-lite-test
+  labels:
+    workload-type: cpu-lite
+    experiment: scheduler-eval
+spec:
+  containers:
+    - name: cpu-lite-stress
+      image: polinux/stress
+      command: ["stress"]
+      args: ["--cpu", "1", "--timeout", "45"]
+      resources:
+        requests:
+          cpu: "100m"
+          memory: "32Mi"
+        limits:
+          cpu: "200m"
+          memory: "64Mi"
+  restartPolicy: Never

@@ -1,0 +1,422 @@
+{
+  "n_trials": 5,
+  "trial_ids": [
+    "stage_b_authoritative_run_002",
+    "stage_b_authoritative_run_003",
+    "stage_b_authoritative_run_004",
+    "stage_b_authoritative_run_005",
+    "stage_b_authoritative_run_006"
+  ],
+  "overall_custom_minus_baseline_mean": {
+    "scheduling_latency_delta_s_mean": 0.0333,
+    "startup_time_delta_s_mean": 0.015,
+    "total_time_delta_s_mean": 0.049
+  },
+  "utility_components_custom_minus_baseline_mean": {
+    "utility_delta_mean": 1.9981,
+    "safe_placement_rate_delta_mean": 2.002,
+    "anomalous_rate_delta_mean": -2.002,
+    "high_contention_rate_delta_mean": -4.0,
+    "avg_decision_latency_ms_delta_mean": 33.34
+  },
+  "by_phase_custom_minus_baseline_mean": {
+    "normal": {
+      "scheduling_latency_delta_s_mean": -0.0,
+      "startup_time_delta_s_mean": 0.1733,
+      "total_time_delta_s_mean": 0.1733
+    },
+    "stress": {
+      "scheduling_latency_delta_s_mean": 0.0667,
+      "startup_time_delta_s_mean": -0.1486,
+      "total_time_delta_s_mean": -0.0809
+    }
+  },
+  "by_phase_workload_custom_minus_baseline_mean": {
+    "normal": {
+      "cpu": {
+        "scheduling_latency_delta_s_mean": -0.08,
+        "startup_time_delta_s_mean": -0.36,
+        "total_time_delta_s_mean": -0.44
+      },
+      "memory": {
+        "scheduling_latency_delta_s_mean": 0.0,
+        "startup_time_delta_s_mean": 0.12,
+        "total_time_delta_s_mean": 0.12
+      },
+      "mixed": {
+        "scheduling_latency_delta_s_mean": 0.08,
+        "startup_time_delta_s_mean": 0.76,
+        "total_time_delta_s_mean": 0.84
+      }
+    },
+    "stress": {
+      "cpu": {
+        "scheduling_latency_delta_s_mean": 0.04,
+        "startup_time_delta_s_mean": -0.88,
+        "total_time_delta_s_mean": -0.84
+      },
+      "memory": {
+        "scheduling_latency_delta_s_mean": 0.04,
+        "startup_time_delta_s_mean": -0.31,
+        "total_time_delta_s_mean": -0.27
+      },
+      "mixed": {
+        "scheduling_latency_delta_s_mean": 0.12,
+        "startup_time_delta_s_mean": 0.72,
+        "total_time_delta_s_mean": 0.84
+      }
+    }
+  },
+  "largest_startup_regression_bucket": {
+    "phase": "normal",
+    "workload": "mixed",
+    "startup_time_delta_s_mean": 0.76
+  },
+  "per_trial": [
+    {
+      "run_id": "stage_b_authoritative_run_002",
+      "summary_path": "scheduler-prediction/online/results/stage_b_authoritative_run_002/stage_b_summary.json",
+      "overall": {
+        "placement_fairness_delta_pct": 0.0,
+        "scheduling_latency_delta_s": -0.0333,
+        "startup_time_delta_s": -0.4333,
+        "total_time_delta_s": -0.4666
+      },
+      "utility": {
+        "utility_delta": 5.17183,
+        "safe_placement_rate_delta": 6.67,
+        "anomalous_rate_delta": -6.67,
+        "high_contention_rate_delta": -3.33,
+        "avg_decision_latency_ms_delta": -33.3,
+        "fairness_component_delta": 0.0,
+        "latency_penalty_delta": 0.00333
+      },
+      "by_phase": {
+        "normal": {
+          "placement_fairness_delta_pct": 0.0,
+          "scheduling_latency_delta_s": 0.0,
+          "startup_time_delta_s": -0.4667,
+          "total_time_delta_s": -0.4667
+        },
+        "stress": {
+          "placement_fairness_delta_pct": 0.0,
+          "scheduling_latency_delta_s": -0.0666,
+          "startup_time_delta_s": -0.4,
+          "total_time_delta_s": -0.4667
+        }
+      },
+      "by_phase_workload": {
+        "normal": {
+          "cpu": {
+            "scheduling_latency_delta_s": -0.2,
+            "startup_time_delta_s": 0.0,
+            "total_time_delta_s": -0.2
+          },
+          "memory": {
+            "scheduling_latency_delta_s": 0.2,
+            "startup_time_delta_s": -1.6,
+            "total_time_delta_s": -1.4
+          },
+          "mixed": {
+            "scheduling_latency_delta_s": 0.0,
+            "startup_time_delta_s": 0.2,
+            "total_time_delta_s": 0.2
+          }
+        },
+        "stress": {
+          "cpu": {
+            "scheduling_latency_delta_s": 0.0,
+            "startup_time_delta_s": -1.2,
+            "total_time_delta_s": -1.2
+          },
+          "memory": {
+            "scheduling_latency_delta_s": -0.2,
+            "startup_time_delta_s": 0.4,
+            "total_time_delta_s": 0.2
+          },
+          "mixed": {
+            "scheduling_latency_delta_s": 0.0,
+            "startup_time_delta_s": -0.4,
+            "total_time_delta_s": -0.4
+          }
+        }
+      }
+    },
+    {
+      "run_id": "stage_b_authoritative_run_003",
+      "summary_path": "scheduler-prediction/online/results/stage_b_authoritative_run_003/stage_b_summary.json",
+      "overall": {
+        "placement_fairness_delta_pct": 0.0,
+        "scheduling_latency_delta_s": -0.0667,
+        "startup_time_delta_s": 0.2667,
+        "total_time_delta_s": 0.2
+      },
+      "utility": {
+        "utility_delta": -4.66233,
+        "safe_placement_rate_delta": -6.67,
+        "anomalous_rate_delta": 6.67,
+        "high_contention_rate_delta": 0.0,
+        "avg_decision_latency_ms_delta": -66.7,
+        "fairness_component_delta": 0.0,
+        "latency_penalty_delta": 0.00667
+      },
+      "by_phase": {
+        "normal": {
+          "placement_fairness_delta_pct": 0.0,
+          "scheduling_latency_delta_s": -0.1333,
+          "startup_time_delta_s": 0.1333,
+          "total_time_delta_s": 0.0
+        },
+        "stress": {
+          "placement_fairness_delta_pct": 0.0,
+          "scheduling_latency_delta_s": 0.0,
+          "startup_time_delta_s": 0.4,
+          "total_time_delta_s": 0.4
+        }
+      },
+      "by_phase_workload": {
+        "normal": {
+          "cpu": {
+            "scheduling_latency_delta_s": 0.0,
+            "startup_time_delta_s": -0.6,
+            "total_time_delta_s": -0.6
+          },
+          "memory": {
+            "scheduling_latency_delta_s": -0.4,
+            "startup_time_delta_s": -1.0,
+            "total_time_delta_s": -1.4
+          },
+          "mixed": {
+            "scheduling_latency_delta_s": 0.0,
+            "startup_time_delta_s": 2.0,
+            "total_time_delta_s": 2.0
+          }
+        },
+        "stress": {
+          "cpu": {
+            "scheduling_latency_delta_s": 0.0,
+            "startup_time_delta_s": -0.8,
+            "total_time_delta_s": -0.8
+          },
+          "memory": {
+            "scheduling_latency_delta_s": 0.0,
+            "startup_time_delta_s": 0.4,
+            "total_time_delta_s": 0.4
+          },
+          "mixed": {
+            "scheduling_latency_delta_s": 0.0,
+            "startup_time_delta_s": 1.6,
+            "total_time_delta_s": 1.6
+          }
+        }
+      }
+    },
+    {
+      "run_id": "stage_b_authoritative_run_004",
+      "summary_path": "scheduler-prediction/online/results/stage_b_authoritative_run_004/stage_b_summary.json",
+      "overall": {
+        "placement_fairness_delta_pct": 0.0,
+        "scheduling_latency_delta_s": 0.1,
+        "startup_time_delta_s": -0.7586,
+        "total_time_delta_s": -0.6551
+      },
+      "utility": {
+        "utility_delta": 1.8215,
+        "safe_placement_rate_delta": 3.33,
+        "anomalous_rate_delta": -3.33,
+        "high_contention_rate_delta": 3.33,
+        "avg_decision_latency_ms_delta": 100.0,
+        "fairness_component_delta": 0.0,
+        "latency_penalty_delta": -0.01
+      },
+      "by_phase": {
+        "normal": {
+          "placement_fairness_delta_pct": -6.1538,
+          "scheduling_latency_delta_s": 0.1333,
+          "startup_time_delta_s": -0.4,
+          "total_time_delta_s": -0.2667
+        },
+        "stress": {
+          "placement_fairness_delta_pct": 7.8832,
+          "scheduling_latency_delta_s": 0.0667,
+          "startup_time_delta_s": -1.1428,
+          "total_time_delta_s": -1.0714
+        }
+      },
+      "by_phase_workload": {
+        "normal": {
+          "cpu": {
+            "scheduling_latency_delta_s": 0.2,
+            "startup_time_delta_s": -2.6,
+            "total_time_delta_s": -2.4
+          },
+          "memory": {
+            "scheduling_latency_delta_s": 0.0,
+            "startup_time_delta_s": -0.6,
+            "total_time_delta_s": -0.6
+          },
+          "mixed": {
+            "scheduling_latency_delta_s": 0.2,
+            "startup_time_delta_s": 2.0,
+            "total_time_delta_s": 2.2
+          }
+        },
+        "stress": {
+          "cpu": {
+            "scheduling_latency_delta_s": 0.0,
+            "startup_time_delta_s": -1.0,
+            "total_time_delta_s": -1.0
+          },
+          "memory": {
+            "scheduling_latency_delta_s": 0.0,
+            "startup_time_delta_s": -1.75,
+            "total_time_delta_s": -1.75
+          },
+          "mixed": {
+            "scheduling_latency_delta_s": 0.2,
+            "startup_time_delta_s": -0.8,
+            "total_time_delta_s": -0.6
+          }
+        }
+      }
+    },
+    {
+      "run_id": "stage_b_authoritative_run_005",
+      "summary_path": "scheduler-prediction/online/results/stage_b_authoritative_run_005/stage_b_summary.json",
+      "overall": {
+        "placement_fairness_delta_pct": 0.0,
+        "scheduling_latency_delta_s": -0.0333,
+        "startup_time_delta_s": 0.6,
+        "total_time_delta_s": 0.5666
+      },
+      "utility": {
+        "utility_delta": 5.34133,
+        "safe_placement_rate_delta": 3.34,
+        "anomalous_rate_delta": -3.34,
+        "high_contention_rate_delta": -20.0,
+        "avg_decision_latency_ms_delta": -33.3,
+        "fairness_component_delta": 0.0,
+        "latency_penalty_delta": 0.00333
+      },
+      "by_phase": {
+        "normal": {
+          "placement_fairness_delta_pct": 0.0,
+          "scheduling_latency_delta_s": -0.0667,
+          "startup_time_delta_s": 0.8667,
+          "total_time_delta_s": 0.8
+        },
+        "stress": {
+          "placement_fairness_delta_pct": 0.0,
+          "scheduling_latency_delta_s": 0.0,
+          "startup_time_delta_s": 0.3333,
+          "total_time_delta_s": 0.3334
+        }
+      },
+      "by_phase_workload": {
+        "normal": {
+          "cpu": {
+            "scheduling_latency_delta_s": -0.2,
+            "startup_time_delta_s": 0.4,
+            "total_time_delta_s": 0.2
+          },
+          "memory": {
+            "scheduling_latency_delta_s": 0.0,
+            "startup_time_delta_s": 2.6,
+            "total_time_delta_s": 2.6
+          },
+          "mixed": {
+            "scheduling_latency_delta_s": 0.0,
+            "startup_time_delta_s": -0.4,
+            "total_time_delta_s": -0.4
+          }
+        },
+        "stress": {
+          "cpu": {
+            "scheduling_latency_delta_s": 0.2,
+            "startup_time_delta_s": -0.2,
+            "total_time_delta_s": 0.0
+          },
+          "memory": {
+            "scheduling_latency_delta_s": 0.0,
+            "startup_time_delta_s": -0.4,
+            "total_time_delta_s": -0.4
+          },
+          "mixed": {
+            "scheduling_latency_delta_s": -0.2,
+            "startup_time_delta_s": 1.6,
+            "total_time_delta_s": 1.4
+          }
+        }
+      }
+    },
+    {
+      "run_id": "stage_b_authoritative_run_006",
+      "summary_path": "scheduler-prediction/online/results/stage_b_authoritative_run_006/stage_b_summary.json",
+      "overall": {
+        "placement_fairness_delta_pct": 0.0,
+        "scheduling_latency_delta_s": 0.2,
+        "startup_time_delta_s": 0.4,
+        "total_time_delta_s": 0.6
+      },
+      "utility": {
+        "utility_delta": 2.318,
+        "safe_placement_rate_delta": 3.34,
+        "anomalous_rate_delta": -3.34,
+        "high_contention_rate_delta": 0.0,
+        "avg_decision_latency_ms_delta": 200.0,
+        "fairness_component_delta": 0.0,
+        "latency_penalty_delta": -0.02
+      },
+      "by_phase": {
+        "normal": {
+          "placement_fairness_delta_pct": 0.0,
+          "scheduling_latency_delta_s": 0.0666,
+          "startup_time_delta_s": 0.7333,
+          "total_time_delta_s": 0.8
+        },
+        "stress": {
+          "placement_fairness_delta_pct": 0.0,
+          "scheduling_latency_delta_s": 0.3333,
+          "startup_time_delta_s": 0.0667,
+          "total_time_delta_s": 0.4
+        }
+      },
+      "by_phase_workload": {
+        "normal": {
+          "cpu": {
+            "scheduling_latency_delta_s": -0.2,
+            "startup_time_delta_s": 1.0,
+            "total_time_delta_s": 0.8
+          },
+          "memory": {
+            "scheduling_latency_delta_s": 0.2,
+            "startup_time_delta_s": 1.2,
+            "total_time_delta_s": 1.4
+          },
+          "mixed": {
+            "scheduling_latency_delta_s": 0.2,
+            "startup_time_delta_s": 0.0,
+            "total_time_delta_s": 0.2
+          }
+        },
+        "stress": {
+          "cpu": {
+            "scheduling_latency_delta_s": 0.0,
+            "startup_time_delta_s": -1.2,
+            "total_time_delta_s": -1.2
+          },
+          "memory": {
+            "scheduling_latency_delta_s": 0.4,
+            "startup_time_delta_s": -0.2,
+            "total_time_delta_s": 0.2
+          },
+          "mixed": {
+            "scheduling_latency_delta_s": 0.6,
+            "startup_time_delta_s": 1.6,
+            "total_time_delta_s": 2.2
+          }
+        }
+      }
+    }
+  ]
+}

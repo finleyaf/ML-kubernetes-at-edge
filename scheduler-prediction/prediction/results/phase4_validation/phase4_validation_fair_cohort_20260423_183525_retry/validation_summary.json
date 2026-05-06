@@ -1,0 +1,28 @@
+{
+  "runs_total": 13,
+  "development_runs": 9,
+  "strict_holdout_runs": 4,
+  "holdout_strategy": "stratified_stress_control",
+  "windows": [
+    5,
+    10
+  ],
+  "horizons": [
+    3,
+    5
+  ],
+  "rolling_origin_splits": 1,
+  "best_linear_config": {
+    "window": 5,
+    "horizon": 3
+  },
+  "outputs": {
+    "cv_per_fold": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/scheduler-prediction/prediction/results/phase4_validation/phase4_validation_fair_cohort_20260423_183525_retry/cv_per_fold_metrics.csv",
+    "cv_per_fold_phase": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/scheduler-prediction/prediction/results/phase4_validation/phase4_validation_fair_cohort_20260423_183525_retry/cv_per_fold_phase_metrics.csv",
+    "cv_summary": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/scheduler-prediction/prediction/results/phase4_validation/phase4_validation_fair_cohort_20260423_183525_retry/cv_config_summary.csv",
+    "holdout_overall": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/scheduler-prediction/prediction/results/phase4_validation/phase4_validation_fair_cohort_20260423_183525_retry/holdout_overall_metrics.csv",
+    "holdout_phase": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/scheduler-prediction/prediction/results/phase4_validation/phase4_validation_fair_cohort_20260423_183525_retry/holdout_phase_metrics.csv",
+    "locked_config": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/scheduler-prediction/prediction/results/phase4_validation/phase4_validation_fair_cohort_20260423_183525_retry/locked_predictor_config.json",
+    "validation_summary": "/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/scheduler-prediction/prediction/results/phase4_validation/phase4_validation_fair_cohort_20260423_183525_retry/validation_summary.json"
+  }
+}

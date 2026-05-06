@@ -1,0 +1,4 @@
+split_name,split_index,window,horizon,model,num_predictions,mae_mean,rmse_mean,smape_mean,train_runs,eval_runs
+strict_holdout,0,5,3,linear,3064,0.03707652952876027,0.09643497509540366,59.75869237173661,run_043|run_044|run_045|run_046|run_047|run_048|run_049|run_050|run_051,run_052|run_053|run_054|run_055
+strict_holdout,0,5,3,naive_last,3064,0.03540509531428195,0.11659688800413537,38.12032079775469,run_043|run_044|run_045|run_046|run_047|run_048|run_049|run_050|run_051,run_052|run_053|run_054|run_055
+strict_holdout,0,5,3,naive_mean,3064,0.03760216060557718,0.1101462606414666,37.86859323791781,run_043|run_044|run_045|run_046|run_047|run_048|run_049|run_050|run_051,run_052|run_053|run_054|run_055

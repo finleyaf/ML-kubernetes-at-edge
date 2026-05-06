@@ -1,0 +1,114 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: custom-rank-scheduler
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: custom-rank-scheduler-as-kube-scheduler
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:kube-scheduler
+subjects:
+  - kind: ServiceAccount
+    name: custom-rank-scheduler
+    namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: custom-rank-scheduler-extra
+rules:
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["storageclasses"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: custom-rank-scheduler-extra
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: custom-rank-scheduler-extra
+subjects:
+  - kind: ServiceAccount
+    name: custom-rank-scheduler
+    namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: custom-rank-scheduler-cluster-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: custom-rank-scheduler
+    namespace: kube-system
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: custom-rank-scheduler-config
+  namespace: kube-system
+data:
+  scheduler-config.yaml: |
+    apiVersion: kubescheduler.config.k8s.io/v1
+    kind: KubeSchedulerConfiguration
+    leaderElection:
+      leaderElect: true
+      resourceName: custom-rank-scheduler
+      resourceNamespace: kube-system
+    profiles:
+      - schedulerName: custom-rank-scheduler
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: custom-rank-scheduler
+  namespace: kube-system
+  labels:
+    app: custom-rank-scheduler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: custom-rank-scheduler
+  template:
+    metadata:
+      labels:
+        app: custom-rank-scheduler
+    spec:
+      serviceAccountName: custom-rank-scheduler
+      priorityClassName: system-cluster-critical
+      nodeSelector:
+        kubernetes.io/hostname: k3s-control
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: kube-scheduler
+          image: registry.k8s.io/kube-scheduler:v1.30.0
+          imagePullPolicy: IfNotPresent
+          command:
+            - /usr/local/bin/kube-scheduler
+            - --config=/etc/kube-scheduler/scheduler-config.yaml
+            - --v=2
+          volumeMounts:
+            - name: scheduler-config
+              mountPath: /etc/kube-scheduler
+              readOnly: true
+      volumes:
+        - name: scheduler-config
+          configMap:
+            name: custom-rank-scheduler-config

@@ -1,0 +1,15 @@
+run_tag=compare_rank_engine_campaign
+plan_path=/Users/finleyaf/Documents/COMP3931 Individual Project/project_folder/anomaly-detection/online-telemetry/dataset/runs/campaign_plan_compare_rank_engine_campaign.json
+zone=europe-west2-c
+interval=1.0
+ssh_retries=4
+ssh_retry_delay=20
+collector_startup_timeout=120
+runs=6
+control_ratio=0.25
+baseline=120
+recovery=120
+seed=42
+start_at=1
+limit=
+completed_at=2026-03-31T17:48:14Z
