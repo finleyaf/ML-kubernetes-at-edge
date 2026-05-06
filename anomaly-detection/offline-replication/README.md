@@ -1,3 +1,3 @@
 # Edge Kubernetes ML Replication
 
-Offline replication of anomaly detection pipemine
+Offline replication of anomaly detection pipeline.
