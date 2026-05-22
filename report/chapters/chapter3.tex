@@ -1,0 +1,203 @@
+\chapter{Implementation and Validation}
+\label{chapter3}
+
+\section{Implementation}
+
+This chapter describes the implemented system that realises the methodology defined in Chapter~\ref{chapter2}. It begins with the tools used for development, then outlines the system architecture and each implementation step, and finally reports validation and observed threats.
+
+\subsection{Implementation Stack and Tooling}
+
+The deployed path was implemented primarily in Python and Bash. The Python modules use \texttt{pandas} and \texttt{numpy} for telemetry shaping and numerical processing, \texttt{requests} for Netdata HTTP queries, and \texttt{scikit-learn} for the predictor layer through \texttt{LinearRegression}, \texttt{Ridge}, and \texttt{MinMaxScaler}. Bash is used for the authoritative online runner because it must coordinate remote shell execution, \texttt{kubectl} calls, manifest submission, stress injection, and artifact capture across multiple nodes in a fixed order. The surrounding execution environment relies on Netdata as the telemetry service, \texttt{gcloud compute ssh} for control-plane access to the cloud VMs, Tailscale for private network reachability across heterogeneous hosts, and the Linux \texttt{stress} utility to generate controlled interference during the live experiments. Standard library JSON, CSV, and pickle serialisation were used throughout so that model bundles, ranking outputs, split manifests, and run summaries remain auditable as plain-file artifacts.
+
+\subsection{Cluster and System Architecture}
+
+The implemented cluster architecture is a three-layer execution path. At the operator layer, local Bash and Python scripts coordinate campaign execution, replay audit, and analysis. At the access layer, Google Cloud SSH provides control over the cloud VMs, while Tailscale maintains private connectivity across the cloud nodes, the Raspberry Pi, and the local machine. At the cluster layer, the K3s control plane manages pod submission and status queries, the worker nodes execute workloads and injected stress, and Netdata agents on the nodes feed a parent endpoint used for telemetry collection. The custom scheduler is therefore realised as a ranking-and-binding pipeline around Kubernetes.
+
+Figure~\ref{fig:system-architecture} shows how these operator, access, and cluster layers are realised on the deployed execution path.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.95\textwidth]{./system-architecture.png}
+    \caption{Implemented system architecture for the online scheduling pipeline.}
+    \label{fig:system-architecture}
+\end{figure}
+
+\begin{table}[h]
+\centering
+\small
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{llll}
+\hline
+\textbf{Node group} & \textbf{Members} & \textbf{Hardware Specification} \\
+\hline
+Control plane & \texttt{k3s-control} & e2-medium (2 vCPUs, 4 GB Memory) \\
+Homogeneous worker pool & \texttt{k3s-worker-2}, \texttt{k3s-worker-3}, \texttt{k3s-worker-4} & e2-small (2 vCPUs, 2 GB Memory) \\
+Supplementary heterogeneous worker & \texttt{raspberrypi} & 2.4GHz quad-core Arm Cortex-A76 processor, 4 GB Memory \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\caption{Hardware specifications of the cluster nodes.}
+\label{tab:ch3-cluster-nodes}
+\end{table}
+
+
+\subsection{Data Collection and Preprocessing Pipeline}
+
+Data collection was conducted in three phases totalling 55 runs. Together, these runs form the telemetry corpus used for predictor training, replay audit, and locked-policy checking.
+
+\begin{table}[h]
+\centering
+\small
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{lll}
+\hline
+\textbf{Campaign stage} & \textbf{Run range} & \textbf{Role} \\
+\hline
+Early collection stages & pre-\texttt{run\_043} & Replication, preprocessing checks, and early pipeline development \\
+Governed development slice & \texttt{run\_043}--\texttt{run\_051} & Predictor fitting, rolling validation, and replay audit \\
+Strict holdout slice & \texttt{run\_052}--\texttt{run\_055} & Locked confirmation before live comparison \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\caption{Run campaign structure.}
+\label{tab:ch3-run-campaign}
+\end{table}
+
+Metric discovery begins with \texttt{chart\_discovery.py}, which verifies the Netdata streams admitted into the collection surface. One-second telemetry is then gathered by \texttt{netdata\_collector.py}, which queries the host-level Netdata data endpoint for \texttt{system.cpu}, \texttt{system.ram}, \texttt{system.net}, and \texttt{system.load} and writes timestamped per-node rows to CSV. Campaign execution and the final fair-cohort refresh are coordinated by \texttt{run\_additional\_novel\_pipeline.py}, which links run planning, collection, model refresh, and split updates into a single governed workflow.
+
+After collection, preprocessing diverges by purpose. \texttt{clean\_metrics.py} produces the smoothed and min-max normalised three-feature surface used in the anomaly-replication pathway, while \texttt{label\_data.py} applies node-aware phase labels. For the scheduler path, worker-only slices are retained and the five-feature predictor surface is preserved without collapsing CPU and network into composites.
+
+\subsection{Predictor Implementation}
+
+The predictive layer is implemented across \texttt{train\_predictor.py}, \texttt{predictor.py}, \texttt{validate\_prediction.py}, and \texttt{phase\_calibration\_report.py}. The training module supports both linear and ridge regression, exposes ridge regularisation through \(\alpha = 1.0\), and constructs sliding windows over the five retained telemetry features. For the retained fair-cohort artifact, model selection kept the linear variant. The persisted training summary records window \(w = 5\), horizon \(h = 3\), stress weight \(= 2.0\), mixed-phase weight \(= 1.5\), and the feature set \texttt{cpu\_user}, \texttt{cpu\_system}, \texttt{ram\_used}, \texttt{net\_received}, and \texttt{net\_sent}.
+
+Within \texttt{train\_predictor.py}, the temporal split is applied before scaling, \texttt{MinMaxScaler} is fitted only on the training period, sliding windows are built from the transformed series, and sample weighting is applied when the target timestamp falls in CPU or mixed phases. A calibration tail is then used to fit a per-feature linear correction before the model bundle and scaler are serialized with pickle. The validation scripts compare the retained artifact against naive baselines on the locked holdout and emit the summaries consumed later by replay audit and live ranking.
+
+
+\subsection{Hybrid Scheduler Engine}
+
+The hybrid ranking engine is implemented in \texttt{hybrid\_scheduler.py} and exposed operationally through \texttt{rank\_live.py}. The scheduler module defines node-capacity and workload-demand dataclasses, the composite node-score structure, and three runtime anomaly monitors: a rolling z-score monitor, a lightweight k-means monitor, and the retained NSA-inspired detector. The locked live settings are summarised in Table~\ref{tab:ch3-live-lock}. In practical terms, those settings keep prediction dominant under nominal conditions while allowing anomaly risk and observed contention to push the ranker toward safer nodes.
+
+\texttt{rank\_live.py} implements the live decision surface described in Chapter~\ref{chapter2}. It loads the recent telemetry CSV, filters to the eligible worker set, replays the samples in timestamp order to warm each node's internal predictor and anomaly history, injects exported allocatable CPU and memory from a separate JSON file, and scores the candidate nodes for the current workload request. The output is both actionable and auditable: it returns a \texttt{best\_node} field for authoritative binding and writes a ranked JSON surface containing the total score, base predicted load, anomaly risk, adaptive weights, relative CPU, workload fractions, capacity penalty, and safety penalties for every candidate. If trained predictor state is unavailable for a node, the engine falls back to bounded current-observation estimates so that the live ranker remains available rather than failing hard.
+
+\subsection{Offline Replay Audit}
+
+The replay audit is implemented in \texttt{offline\_policy\_evaluation.py} and parameterised for the final claim by \texttt{evaluation\_protocol\_safety\_priority.json}. The evaluator resolves the governed run split, loads each run's \texttt{labelled.csv}, rebuilds common replay decision points, and compares prediction-only, anomaly-only, and hybrid policies on the same trace rather than on separate datasets. This keeps the audit focused on policy differences rather than on different telemetry slices.
+
+The protocol file locks the selection objective, utility weights, contention threshold, and holdout rules, while the evaluator emits both a main JSON result and a split-manifest companion for auditability. The selected policy family is therefore preserved as a replay artifact, not just described abstractly, and can be inspected before any live matched-arm run is started. Table~\ref{tab:ch3-live-lock} reports the retained replay-locked settings together with the additional execution constraints required by the final live deployment.
+
+The evaluator implements the Chapter~\ref{chapter2} replay utility directly, using weights of 0.45 for safe placement, -0.25 for anomaly exposure, -0.15 for contention, -0.10 for latency, and +0.05 for fairness, with tie-breakers favouring higher safe placement, fewer anomalies, lower contention, better fairness, and lower latency.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lp{9.2cm}}
+\hline
+\textbf{Category} & \textbf{Frozen live setting} \\
+\hline
+Anomaly source & NSA \\
+Base weights & Prediction \(= 0.8\), anomaly \(= 0.2\) \\
+Adaptive weighting & Enabled; risk thresholds \(= 0.2\) and \(0.7\); maximum shift \(= 0.35\); prediction bounds \([0.05, 0.95]\) \\
+Histories & Warm-up \(= 24\) one-second snapshots; anomaly history \(= 45\) \\
+Detector settings & NSA detector budget \(= 120\); detector radius \(= 0.9\) \\
+Safety penalties & Contention threshold \(= 1.0\), contention penalty \(= 0.1\); safe threshold \(= 1.0\), unsafe-node penalty \(= 0.25\); unsafe-node avoidance enabled \\
+Execution constraints & Workload-aware capacity penalty factor \(= 1.0\); live export of allocatable CPU and memory; common eligible worker set \(=\) \texttt{k3s-worker-2}, \texttt{k3s-worker-3}, \texttt{k3s-worker-4}; one-shot pre-decision snapshots with persisted ranking artifacts; authoritative custom placement through rank-and-pin \\
+\hline
+\end{tabular}
+\caption{Frozen configuration used by the final live custom scheduler.}
+\label{tab:ch3-live-lock}
+\end{table}
+
+\subsection{Authoritative Custom Decision Path}
+
+The authoritative decision path is coordinated by \texttt{run\_stage\_b\_authoritative\_rank\_and\_pin.sh} and the env overlays that freeze the final Stage~B and Stage~C settings. For each custom-arm decision, the runner refreshes a telemetry history file from Netdata, exports allocatable node CPU and memory through \texttt{export\_node\_capacities.py}, and invokes \texttt{rank\_live.py} to produce a ranked JSON artifact for the currently eligible nodes. The chosen node is then written into the manifest through \texttt{spec.nodeName}, making the custom decision authoritative rather than advisory.
+
+The baseline arm uses the same workload family, control node, namespace, and phase order, but omits the \texttt{spec.nodeName} patch and leaves placement to \texttt{default-scheduler}. The same runner then calls \texttt{collect\_scheduling\_metrics.py} to recover timing, placement, and node-state evidence from Kubernetes events and node snapshots, so the final comparison links every aggregate result back to a preserved per-decision snapshot CSV and ranking JSON.
+
+\subsection{Online Experiment Orchestration}
+
+Three workload types are used in every phase:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\hline
+\textbf{Workload} & \textbf{Resource Profile} & \textbf{Container Command} \\
+\hline
+\texttt{cpu-pod} & CPU-intensive & \texttt{stress --cpu 1 --timeout 60} \\
+\texttt{memory-pod} & Memory-intensive & \texttt{stress --vm 1 --timeout 60} \\
+\texttt{mixed-pod} & CPU + memory & \texttt{stress --cpu 1 --vm 1 --timeout 60} \\
+\hline
+\end{tabular}
+\caption{Workload types used in the final online matched-arm evaluation. Workload requests are parsed from the manifests and supplied directly to the live ranker.}
+\label{tab:ch3-workload-types}
+\end{table}
+
+For the supplementary Pi-inclusive extension, the same orchestration path is reused but with additional lite workload manifests and workload-specific Raspberry Pi eligibility controlled through the environment overlays. This keeps the orchestration code stable while changing only the feasible worker set and the workload envelope.
+
+With one normal phase and three stress phases per trial, each arm executes 12 pods per trial (three workloads per phase across four phases), for a planned total of 120 pods per arm across 10 trials.
+
+For each pod, \texttt{collect\_scheduling\_metrics.py} records timing metrics (scheduling latency, startup time, and total time), placement metadata (chosen node, phase, stress profile, stress target, and workload request), safety labels (high-contention flag, anomaly proxy label, and expected-node match), and decision diagnostics (score, predicted load, anomaly risk, capacity penalty, prediction source, and the paths to the snapshot CSV and ranking JSON used for the decision).
+
+The final summary stage then produces aggregate, per-phase, per-workload, and utility-component views from these enriched artifacts.
+
+\section{Validation and Threats to Validity}
+
+\subsection{Predictor Validation}
+
+Predictor validation followed the locked development/holdout protocol defined in Chapter~\ref{chapter2}. On the strict holdout (1438 predictions), the retained linear \((w{=}5, h{=}3)\) artifact achieved MAE 0.0350 and RMSE 0.0843, compared with 0.0362 and 0.1015 for naive-last and 0.0362 and 0.0943 for naive-mean. Its sMAPE was not uniformly lower (32.19 versus 29.88 and 28.39), so the retained model is justified by its lower absolute-error profile for the ranking task rather than by dominating every metric. The final trained artifact also produced comparable error across worker nodes, supporting the use of one common scoring surface across the live worker pool.
+
+
+\subsection{Offline Replay Validation}
+
+Offline replay validation applied the governed split to the prediction-only, anomaly-only, and hybrid candidates and fixed the hybrid family before live execution.
+
+
+\subsection{Online Pipeline Readiness Validation}
+
+Before executing the authoritative experiment, the readiness checks in Table~\ref{tab:ch3-readiness} were completed.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lp{8.8cm}}
+\hline
+\textbf{Check} & \textbf{Implementation evidence} \\
+\hline
+Runner validation & Shell syntax checks passed for the Stage B orchestration scripts. \\
+Python validation & \texttt{py\_compile} passed for the ranking, replay, and orchestration modules touched by the final protocol. \\
+Ranking smoke check & Synthetic validation confirmed that \texttt{rank\_live.py} runs with eligible-node filtering and fallback behaviour enabled. \\
+Analysis smoke check & The summary pipeline ran successfully on an existing smoke dataset. \\
+Artifact readiness & The collector, metric logger, and analysis scripts accepted and preserved the per-decision fields required for telemetry audit. \\
+\hline
+\end{tabular}
+\caption{Readiness checks completed before the final authoritative online run.}
+\label{tab:ch3-readiness}
+\end{table}
+
+These checks established pipeline correctness before the final result was generated.
+
+
+\subsection{Online Experiment Data Integrity}
+
+The final authoritative run produced complete and internally consistent artifacts.
+
+Both arms recorded 120 pods, corresponding to 10 trials with 12 pods per arm per trial. Phase coverage was complete at 30 pods per phase in both arms and 10 pods per workload within each phase. Only \texttt{k3s-worker-2}, \texttt{k3s-worker-3}, and \texttt{k3s-worker-4} appear in the final placement summaries. The custom arm achieved a 100\% expected-node match rate, and its decision provenance shows \texttt{model: 120}, confirming that every authoritative decision was generated by the trained predictor path.
+
+Together, these checks support the interpretation that the final summary is complete and directly traceable from per-decision artifacts to aggregate results.
+
+
+\subsection{Threats to Validity and Mitigations}
+
+\textbf{Internal validity threats.} Live cluster state can drift between arms, telemetry endpoints can fail transiently, and nominally homogeneous workers can still differ through background activity. These threats were mitigated by a common eligible worker set, explicit warm-up, one-shot pre-decision snapshots, persisted decision artifacts, counterbalanced arm order, and fixed washout periods.
+
+\textbf{Construct validity threats.} The online experiment measures placement safety, anomaly exposure, contention, timing, fairness, and utility under controlled stress injection. These remain proxies for wider edge quality of service, but they are closer to actual placement decisions than predictor error or detector F1 alone.
+
+\textbf{External validity threats.} The cluster remains modest relative to production edge deployments, and the comparison is restricted to a homogeneous worker subset. This improves causal clarity for the baseline comparison but does not exhaust the heterogeneity question for mixed-capacity edge fleets.
+
+\textbf{Selection bias threat.} Offline replay influenced the choice of the core hybrid family, but the live configuration was fixed before the authoritative run. This reduces optimistic bias from adapting the method after observing online outcomes \cite{cawley2010overfitting}.
+
+
+\subsection{Reproducibility Package}
+
+Reproducibility is supported through code, configuration, and artifact traceability, consistent with general principles for computational research \cite{peng2011reproducible}. The package comprises campaign plans and per-run telemetry artifacts, locked model directories with training summaries, offline replay audit configuration and outputs, workload manifests and metric-collection helpers, the authoritative online runner and node-capacity export, per-decision online artifacts (snapshot CSVs, ranking JSONs, metadata, and enriched arm CSVs), and the final run summary JSON used for the aggregate results in Chapter~\ref{chapter4}.

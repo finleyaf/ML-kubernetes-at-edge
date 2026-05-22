@@ -1,17 +1,55 @@
 # Dissertation Project
 
-This repository contains each phase of my dissertation: Anomaly-Aware Lightweight ML for Efficient Kubernetes Scheduling at the Edge.
+Anomaly-Aware Lightweight ML for Efficient Kubernetes Scheduling at the Edge.
 
-## Anomaly detection
+This repository contains the complete implementation and evaluation artifacts for a dissertation project that develops a lightweight Kubernetes scheduling pipeline for edge-style environments.
 
-- offline replication – baseline with synthetic data
-- online telemetry - netdata metrics from simulated edge cluster
+## Project summary
 
-## Scheduler prediction
+- Designed a hybrid scheduler that combines:
+  - NSA-inspired anomaly monitoring on live Netdata telemetry,
+  - short-horizon node load prediction, and
+  - workload-aware node capacity scoring.
+- Implemented a complete development workflow from offline replication and model validation through to live matched-arm scheduler comparison.
+- Evaluated the system in a controlled edge-style setting and showed that the custom scheduler:
+  - increased the safe placement rate from 64.17% to 75.83%,
+  - reduced anomalous placements from 35.83% to 24.17%,
+  - preserved mean scheduling latency, and
+  - improved startup and total execution time by approximately 23%.
 
-- prediction - lightweight node-load forecasting, validation, and model artifacts
-- custom scheduler - hybrid ranking logic, offline policy evaluation, and live decision support
-- online - experiment configuration, orchestration, and result artifacts for the live scheduler comparison
+## Key contributions
 
-Each experiment contains its own code and dependencies.
+- Lightweight anomaly detection replication using synthetic and real Netdata telemetry.
+- Short-horizon forecasting models for node-load prediction with bias-aware feature scaling.
+- Hybrid ranking and binding logic in `scheduler-prediction/custom-scheduler/` that enforces safety-first placement while keeping runtime overhead low.
+- Offline replay audit and locked policy selection to ensure claim-bearing results transfer to online deployment.
+- Live K3s experiment orchestration with traceable decision artifacts, scheduling metrics, and fair matched-arm comparison.
+
+## Repository structure
+
+- `anomaly-detection/offline-replication/` — synthetic data replication, anomaly detector comparison, and evaluation.
+- `anomaly-detection/online-telemetry/` — Netdata metric collection, telemetry preprocessing, and cluster dataset generation.
+- `scheduler-prediction/prediction/` — predictor training, validation, and model selection.
+- `scheduler-prediction/custom-scheduler/` — hybrid scheduler implementation, offline policy evaluation, and ranking tools.
+- `scheduler-prediction/online/` — live experiment runner, cluster configuration, scripts, and result artifacts.
+- `scheduler-prediction/baseline/` — baseline workload manifests and evaluation helpers used for comparison.
+- `report/` — dissertation report source with full methodology, implementation details, and results discussion.
+
+## Usage notes
+
+Each major subsystem has its own dependencies and experiment-specific scripts. This top-level README is the primary entry point for understanding the project structure and core results.
+
+For detailed reproduction or inspection, explore the relevant directories directly and consult any local README files where available.
+
+## Technologies
+
+- Python 3
+- Kubernetes / K3s
+- Netdata telemetry
+- scikit-learn, pandas, numpy
+- Bash orchestration and experiment automation
+
+## Outcome
+
+This project demonstrates that a lightweight, anomaly-aware scheduler can outperform the default Kubernetes scheduler on placement safety and application startup metrics in a controlled edge-style deployment, while preserving low scheduling overhead and maintaining a traceable experimental workflow.
 

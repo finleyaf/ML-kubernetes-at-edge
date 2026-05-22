@@ -1,0 +1,146 @@
+\begin{appendices}
+
+%
+% The first appendix must be "Self-appraisal".
+%
+\chapter{Self-appraisal}
+
+\section{Critical self-evaluation}
+
+In completing this project I aimed to:
+
+\begin{itemize}
+\item construct an edge-style experimental environment that still represented heterogeneous nodes
+\item build an end-to-end pipeline from telemetry collection to live scheduling evaluation
+\item combine anomaly-aware and prediction-informed signals in a lightweight scheduler
+\end{itemize}
+
+I achieved these aims to a substantial extent. The project produced a functioning pipeline from data collection through to final online evaluation, and the implementation was validated through predictor holdout testing, replay-based policy locking, readiness checks, and a matched-arm live comparison. The final result showed that the retained safety-first hybrid scheduler improved relevant placement outcomes against the unmodified Kubernetes default scheduler in the claim-bearing Stage B setting. In that sense, the project did not remain at the level of a prototype concept: it progressed to a complete evaluated system with traceable artifacts and a defensible experimental workflow.
+
+At the same time, the strongest results were obtained in the homogeneous worker setting rather than across the full heterogeneous edge scenario that originally motivated the project. This limitation matters. Although the broader environment included a Raspberry Pi and therefore reflected a mixed-capacity edge fleet, the final authoritative comparison had to be restricted to the three homogeneous cloud workers in order to preserve a common feasible set and support a cleaner baseline comparison. The completed Pi-inclusive extension was still useful, but it did not support a positive heterogeneous-transfer claim. That outcome suggests that the current safety-first ranker transfers conservatively when faced with a qualitatively different worker profile, and that the broader edge objective remains only partially achieved.
+
+With more time, I would have explored evaluation policies that were better suited to heterogeneous scheduling rather than inheriting the final policy family from the homogeneous setting. I would also have preferred to test the scheduler under more organic edge conditions, including longer-running background interference, more varied workload mixtures, and less manufactured stress injection. Those extensions would have strengthened the external validity of the project and provided a better basis for judging how well the hybrid approach generalises beyond the controlled conditions used here.
+
+\section{Personal reflection and lessons learned}
+
+I feel genuinely proud of completing this project because of both its technical difficulty and its scale. It has been the most demanding piece of work I have undertaken as a student, requiring me to combine research, systems implementation, experimentation, and formal academic writing within one sustained project. Reaching a completed and evaluated result, even with clear limitations still remaining, feels like a significant personal achievement.
+
+One of the most rewarding aspects of the project was the opportunity to apply material from across my degree in a single practical setting. Concepts from distributed systems, machine learning, software engineering, evaluation design, and data analysis all became directly relevant. I also particularly valued the opportunity to work with technologies that were new to me at the start of the project, especially Kubernetes and Google Cloud. Developing confidence with those tools has made the project feel useful beyond the dissertation itself, because they are technologies I would like to continue building on after university.
+
+In hindsight, stronger early planning and a narrower initial target would have improved the project. The ambition to cover both a realistic heterogeneous edge setting and a fully evaluated scheduler pipeline created a large scope, and a tighter initial definition could have concentrated effort sooner on the claim-bearing comparison. That would likely have allowed more time for repeated online trials, cleaner heterogeneous-policy redesign, and earlier integration between the predictor, anomaly detector, and live scheduler components.
+
+The main lesson I would carry forward about time management is the importance of distributing effort more evenly across the full project period rather than allowing implementation, evaluation, and writing pressure to accumulate toward the end. In a future project of this size, I would set earlier internal deadlines for a locked methodology, a stable experimental protocol, and a first complete draft, and I would protect regular time each week for writing rather than treating it as a final-stage task. That approach would have reduced time pressure and left more room for iterative refinement of both the system and the report.
+
+\section{Legal, social, ethical and professional issues}
+
+Although this project did not involve human participants or sensitive personal datasets, legal, social, ethical, and professional considerations were still relevant because the work relied on third-party software, shared infrastructure, borrowed hardware, and experimental claims that could easily be overstated if not handled carefully.
+
+\subsection{Legal issues}
+
+The main legal issues in this project related to software usage, service terms, and redistribution rather than to personal data law. The system was built using open-source tools and services, including Kubernetes, Netdata, Python libraries, and supporting cloud infrastructure. That means it was important to use those tools within their licensing terms and to ensure that any final repository artifacts remained compatible with the licenses of the software on which the project depends. In addition, the use of Google Cloud services and remote access tooling imposed terms of service and acceptable-use obligations that had to be respected throughout experimentation.
+
+\subsection{Social issues}
+
+The broader social relevance of the project lies in the growing use of distributed and edge computing for services that can affect people indirectly through responsiveness, availability, and reliability. More effective workload placement can improve system efficiency and reduce delays, which is beneficial in settings where edge deployments are used to support time-sensitive applications. At the same time, scheduler decisions can also have negative consequences if they systematically favour some nodes or workloads in ways that reduce service quality elsewhere. That is one reason why the project evaluates not only timing and contention but also fairness related metrics and interprets the results cautiously.
+
+\subsection{Ethical issues}
+
+The ethical issues in this project were mainly about responsible experimentation and honest reporting rather than participant welfare. No human subjects were involved, and no personal data was processed, so formal research ethics risks were limited.
+
+\subsection{Professional issues}
+
+Several professional issues were central to the project. The first was reproducibility. Because the project makes an empirical systems claim, it was important to preserve training summaries, replay configurations, ranked outputs, split manifests, and final evaluation artifacts so that the path from implementation to conclusion remained auditable. The second was attribution. The anomaly-replication component, evaluation measures, and methodological framing all build on prior work, so it was necessary to acknowledge those sources clearly and avoid presenting inherited ideas as original contributions.
+
+Professional standards also required disciplined engineering practice. This included using version controlled code, validating scripts before live runs, keeping the online policy fixed before the final comparison, and documenting limitations instead of treating a partial result as a complete solution. More broadly, the project reinforced that professional computing work is not only about building a technically functional system; it also involves making claims carefully, reporting failures honestly, and producing artifacts that other people can inspect and build on.
+
+
+%
+% Any other appendices you wish to use should come after "Self-appraisal". You can have as many appendices as you like.
+%
+\chapter{Replication Studies for Detector Choice}
+\label{appendixB}
+
+This appendix retains only the replication evidence needed by the main report. Its purpose is to justify the anomaly-source selection and preprocessing assumptions carried into Chapters~\ref{chapter2}--\ref{chapter4}.
+
+\section{Purpose and Scope}
+
+Two replication strands informed the final pipeline.
+
+\begin{itemize}
+\item \textbf{Offline replication} tested whether NSA and K-means remained effective under controlled anomaly patterns and preprocessing choices.
+\item \textbf{Online telemetry replication} checked whether those detector behaviours transferred to real Netdata telemetry from an earlier non-claim-bearing K3s deployment.
+\end{itemize}
+
+The only findings carried forward into the main methodology are that NSA was the more reliable detector on the retained telemetry surface, and that smoothing strength materially affects anomaly separability.
+
+\section{Offline Replication Summary}
+
+The offline study compared NSA and K-means on synthetic edge style metrics under identical preprocessing. Two anomaly regimes were used: subtle transient deviations and sustained multi-dimensional deviations. Rolling-mean smoothing and feature normalisation were applied to reflect realistic telemetry preprocessing, because the later scheduler pipeline also relies on smoothed and scaled resource histories.
+
+The key question was not whether every anomaly could be detected, but whether preprocessing preserved a geometrically distinct non-self region for NSA. Subtle anomalies were intentionally difficult: once smoothed and normalised, they became embedded in the normal distribution and therefore offered little separable structure for one-class detection. Sustained anomalies remained more useful because they created a prolonged shift in operating regime.
+
+\begin{table}[h]
+    \centering
+    \begin{adjustbox}{max width=\textwidth}
+    \begin{tabular}{llrrr}
+        \hline
+        \textbf{Dataset} & \textbf{Window} & \textbf{Dist. from Normal} & \textbf{Precision} & \textbf{Recall} \\
+        \hline
+        Subtle anomalies & default & 0.25 & 0.00 & 1.00 \\
+        Sustained anomalies & default & 0.34 & 0.00 & 1.00 \\
+        Sustained anomalies & 2 & 1.93 & 0.48 & 1.00 \\
+        \hline
+    \end{tabular}
+    \end{adjustbox}
+    \caption{Offline NSA replication summary showing the effect of smoothing on anomaly separability.}
+    \label{tab:appendix-offline-replication}
+\end{table}
+
+Table~\ref{tab:appendix-offline-replication} captures the offline result carried forward into the project. Excessive smoothing collapsed separability even for sustained anomalies, whereas a smaller window preserved a usable non-self region. The offline replication therefore established a practical preprocessing constraint: smoothing improves stability, but too much smoothing can suppress exactly the abnormal structure the detector is meant to identify.
+
+\section{Online Telemetry Replication Summary}
+
+The online replication used an earlier, smaller K3s deployment and should be read only as supporting evidence for detector behaviour, not as part of the final scheduler comparison. Real Netdata telemetry was collected at one-second resolution, mapped onto the detector feature surface, filtered to worker nodes, and evaluated under window sizes 3, 5, and 10.
+
+To keep this appendix concise, the online replication is reduced to the comparison outcome that matters for the main report: NSA remained consistently effective on real telemetry, whereas K-means was unstable and often failed to detect anomalies at all.
+
+\begin{table}[h]
+    \centering
+    \begin{adjustbox}{max width=\textwidth}
+    \begin{tabular}{llll}
+        \hline
+        \textbf{Detector} & \textbf{Worker-2 F1 range} & \textbf{Worker-3 F1 range} & \textbf{Interpretation} \\
+        \hline
+        K-means & 0.000--0.638 & 0.000--0.000 & Inconsistent and highly sensitive to smoothing \\
+        NSA & 0.932--0.960 & 0.958--0.980 & Strong and stable across tested windows \\
+        \hline
+    \end{tabular}
+    \end{adjustbox}
+    \caption{Condensed online telemetry replication results across the tested window sizes.}
+    \label{tab:appendix-online-replication}
+\end{table}
+
+This result reinforced the offline finding. NSA preserved near-perfect precision and high recall across the tested windows, while K-means only partially recovered in one worker/window combination and otherwise produced no useful detections. The online replication therefore justified retaining NSA as the anomaly source for the later hybrid scheduler, while also showing that preprocessing sensitivity remained relevant on real telemetry rather than only on synthetic data.
+
+\section{Findings Carried Forward}
+
+The later chapters rely on this appendix in only three ways:
+
+\begin{itemize}
+\item \textbf{Detector choice.} NSA was retained as the runtime anomaly source because it was the strongest practical detector across the replication studies.
+\item \textbf{Preprocessing caution.} Rolling smoothing and normalisation were acceptable, but smoothing strength had to remain moderate so that sustained anomalies did not collapse into the normal region.
+\item \textbf{Interpretive scope.} These replication studies justify detector and preprocessing choices only; they are not themselves evidence that the final scheduler outperformed the default Kubernetes scheduler.
+\end{itemize}
+
+That separation is maintained in the main report. Chapter~\ref{chapter2} uses this appendix to motivate the retained anomaly source and preprocessing design, Chapter~\ref{chapter3} reports how those decisions were implemented in the final pipeline, and Chapter~\ref{chapter4} reserves the project's substantive claim for the final matched-arm online comparison.
+
+
+
+
+%
+% Other appendices can be added here following the same pattern as above.
+%
+
+
+
+\end{appendices}

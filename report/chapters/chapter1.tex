@@ -1,0 +1,130 @@
+\chapter{Introduction and Background Research}
+\label{chapter1}
+
+\section{Introduction}
+
+The internet has evolved beyond connecting people and computers to encompass a vast network of physical objects and sensors, creating what is widely termed the Internet of Things (IoT). This proliferation of connected devices has driven an exponential increase in data volume and computational demand, while simultaneously heightening the need for low-latency processing and efficient analytics. When all data must traverse centralised cloud infrastructure, the result is network congestion, bandwidth inefficiency, and latency bottlenecks that undermine the real-time requirements of modern applications.
+
+Edge computing addresses these challenges by relocating computation closer to the point of data generation, reducing long-distance data transfer and enabling faster, more localised processing \cite{kim2025exploring}. However, edge environments are inherently complex. They comprise numerous heterogeneous nodes, ranging from resource-constrained IoT sensors to modest edge servers, that experience dynamic and unpredictable workloads while operating under tight resource constraints \cite{rasouli2025false}. Managing such systems manually is impractical, which drives the need for automated container orchestration. Kubernetes has emerged as the de facto standard for this purpose, providing automated deployment, scaling, and fault handling for containerised applications across clusters of machines.
+
+Yet effective orchestration critically depends on the \textit{scheduler}: the component responsible for assigning workloads (pods) to available nodes. The default Kubernetes scheduler is primarily designed for homogeneous data centres with stable, predictable resources \cite{liu2024dynamic}. It relies on declared resource requests rather than actual node utilisation and lacks awareness of runtime anomalies or future resource trends. This makes it poorly suited to the heterogeneous, volatile nature of edge environments, where nodes may experience sudden load spikes, connectivity issues, or resource exhaustion.
+
+Several approaches have been proposed to improve scheduling in such contexts. Static schedulers that ignore runtime state entirely are ineffective in dynamic environments. Monitor-driven heuristics react to observed resource changes but are overly sensitive to noise and inherently backward-looking, struggling with transient workloads since they act only on past states \cite{pashaeehir2025kubedsm}. Machine learning--based anomaly detection can identify deviations from normal behaviour but typically produces binary classifications without directly informing scheduling decisions \cite{fritzsche2024lightweight}. For example, a detector may observe that a worker's CPU and memory usage have moved outside its learned normal operating range and return only a binary outcome such as \textit{normal} or \textit{anomalous}. In an edge Kubernetes setting, anomaly awareness would then mean using that signal during pod placement. Prediction models offer proactive resource forecasting but are rarely combined with anomaly awareness in a system lightweight enough for edge deployment.
+
+This gap, namely the absence of a lightweight system that combines anomaly detection with prediction to inform scheduling, motivates the present work. This project investigates whether a custom Kubernetes scheduling pipeline can use both signals to avoid anomalous or soon-to-be-overloaded nodes while preserving the low decision overhead required in edge environments \cite{liu2024dynamic}.
+
+\subsection{Project Objectives}
+
+This project pursues three objectives:
+
+\begin{enumerate}
+    \item \textbf{Establish supporting anomaly-detection evidence.} Replicate the lightweight anomaly-detection pipeline proposed by Fritzsche et al.~\cite{fritzsche2024lightweight} and use controlled offline and online studies to justify detector choice and preprocessing settings for the scheduler pipeline.
+    
+    \item \textbf{Develop a lightweight prediction-informed scheduler.} Design and implement a short-horizon node-load predictor, then integrate it with the retained anomaly detector in a custom scheduling component that scores nodes using predicted load, anomaly risk, and live workload-capacity context.
+    
+    \item \textbf{Evaluate the locked system against the default scheduler.} Experimentally compare the resulting custom scheduler against the default Kubernetes scheduler in a live K3s edge cluster, using a homogeneous worker subset for the comparison and assessing scheduling overhead, timing outcomes, placement safety, and resource contention.
+\end{enumerate}
+
+
+\section{Background Research}
+
+\subsection{Edge Computing Fundamentals}
+
+The emergence of cloud computing provided a scalable infrastructure for centralised data storage and processing, reducing the need for local physical hardware and enabling network growth. However, the introduction of IoT devices (sensors and embedded systems that generate and transmit data in real time) has resulted in massive volumes of telemetry traversing the network, much of it without immediate utility at the centralised cloud layer \cite{kim2025exploring}.
+
+Edge computing addresses this inefficiency by moving computation as close as possible to the point of data collection. Rather than forwarding all telemetry to a remote data centre, edge nodes process data locally and transmit only aggregated or filtered results when necessary. This architecture reduces bandwidth consumption, lowers latency, and enables IoT devices to make locally informed decisions about what data merits long-distance transfer \cite{shen2025codesign}.
+
+Edge networks are composed of heterogeneous devices, servers, and gateways, each referred to as a \textit{node}. Since many edge nodes are small, mobile, or battery-powered, the computational resources available for processing are inherently constrained. Furthermore, the geographically distributed nature of edge deployments introduces challenges related to network connectivity, synchronisation, and fault tolerance. As edge networks scale, the diversity of node capabilities increases, requiring orchestration systems capable of managing heterogeneous resources effectively \cite{rasouli2025false}.
+
+These constraints (limited resources, heterogeneous hardware, dynamic workloads, and intermittent connectivity) make automated monitoring and anomaly detection essential to maintain reliable operation. Without such mechanisms, edge deployments risk degraded performance, resource exhaustion, and cascading failures across dependent services.
+
+
+\subsection{Kubernetes Architecture and Scheduling}
+
+Kubernetes is a container orchestration platform that automates the deployment, scaling, and management of containerised applications across clusters of machines. Its architecture is divided into a \textit{control plane}, which manages overall cluster state, and one or more \textit{worker nodes}, which execute application workloads.
+
+The control plane consists of several components. The \textit{API server} exposes the Kubernetes API and serves as the central interface for all cluster operations, scaling horizontally through multiple instances. The \textit{etcd} store provides a consistent, highly available backing store for all cluster configuration and state data. The \textit{scheduler} assigns unscheduled pods to suitable nodes through an algorithmic process. The \textit{controller manager} runs control loops that continuously reconcile the actual cluster state with the desired state defined by users.
+
+Worker nodes run containerised applications and comprise three main components: the \textit{kubelet}, which ensures containers are running and healthy according to their pod specifications; \textit{kube-proxy}, which manages network rules enabling communication between pods and external clients; and the \textit{container runtime}, which handles the execution and lifecycle of individual containers.
+
+The default scheduler uses a two-phase approach to assign pods to nodes. In the \textit{filtering} phase, nodes that do not satisfy a pod's requirements, such as resource requests, node selectors, or taints and tolerations, are eliminated. The remaining nodes are termed \textit{feasible nodes}; if none exist, the pod remains unscheduled until conditions change. In the \textit{scoring} phase, each feasible node receives a weighted score based on factors including resource availability, hardware and software constraints, affinity and anti-affinity specifications, data locality, and inter-workload interference. The highest-scoring node is selected and the assignment is communicated to the API server through a process called \textit{binding}.
+
+Kubernetes also exposes several routes for scheduler customisation, including plugin-based extension points and alternative scheduling paths. Despite this extensibility, the default scheduler assumes a homogeneous environment with stable resources \cite{liu2024dynamic}. It bases placement decisions on the resource \textit{requests} declared by containers rather than the actual dynamic load of nodes, which can result in significant load imbalances in heterogeneous edge environments. Furthermore, the default scheduler performs no anomaly detection and therefore cannot make intelligent decisions informed by emerging node-level problems or its own past scheduling inefficiencies \cite{fritzsche2024lightweight}.
+
+For edge deployments, the full Kubernetes distribution carries considerable operational overhead in binary size, memory footprint, and dependency complexity. K3s is a lightweight, CNCF-certified Kubernetes distribution that reduces this footprint by packaging dependencies into a single binary, replacing etcd with a lighter datastore, and automating Transport Layer Security (TLS) management \cite{kim2025exploring}. MicroK8s is another plausible lightweight option, but K3s was selected for this project because its single-binary packaging and lower operational complexity were a better fit for a small mixed VM-and-device testbed, while still preserving standard Kubernetes behaviour.
+
+\subsection{Machine Learning in Resource Management}
+
+Machine learning techniques have been applied to several aspects of resource management in cloud and edge systems. This section reviews three relevant areas: anomaly detection, workload prediction, and integration with orchestration platforms.
+
+\subsubsection{Anomaly Detection for Resource Monitoring}
+
+Statistical methods provide the simplest approach to anomaly detection in resource monitoring. \textit{Threshold-based} detection flags metrics that fall outside a predefined acceptable range, producing a binary in-range or out-of-range classification. \textit{Z-score} detection extends this by measuring the number of standard deviations a metric deviates from its mean; adjusting the z-score threshold controls the trade-off between precision and recall, with higher thresholds generally increasing precision at the cost of lower recall.
+
+\textit{K-means clustering} is a partition-based method that groups data points into $k$ clusters based on proximity to cluster centroids. For anomaly detection, observations whose distance to the nearest centroid exceeds a threshold -- typically derived from training data statistics -- are classified as anomalous. K-means is computationally inexpensive and operates on unlabelled data, making it attractive for resource-constrained environments \cite{fritzsche2024lightweight}.
+
+The \textit{Negative Selection Algorithm} (NSA), inspired by the biological immune system, is a one-class classification method that distinguishes \textit{self} (normal) from \textit{non-self} (anomalous) behaviour. During training, detectors are generated in regions of feature space that do not overlap with the normal data distribution. At runtime, any observation that falls within a detector's radius is classified as anomalous. NSA is particularly suitable for edge environments because it requires only normal-behaviour training data and provides lightweight, multi-dimensional classification \cite{fritzsche2024lightweight}. Fritzsche et al.\ demonstrated that the combination of K-means and NSA provides effective anomaly detection in edge Kubernetes clusters, with NSA achieving especially strong performance due to its ability to model the boundary of normal behaviour in multi-dimensional feature space \cite{fritzsche2024lightweight}.
+
+\subsubsection{Time-Series Prediction for Resource Utilisation}
+
+Several approaches have been proposed for predicting future resource utilisation from historical workload data. For this project, the important distinction is not simply between accurate and inaccurate forecasters, but between models that are lightweight enough to run in the scheduler path and models whose training or inference cost makes them better suited to offline optimisation or large-scale autoscaling.
+
+\textit{ARIMA} (AutoRegressive Integrated Moving Average) is a classical time-series model that captures linear temporal dependencies. Calheiros et al.\ showed that even relatively simple forecasts can support proactive provisioning while maintaining quality of service \cite{calheiros2015arima}. This is relevant because it suggests that practical scheduling benefit does not necessarily require a highly complex predictor when the task is short-horizon resource estimation.
+
+At the other end of the spectrum, \textit{LSTM-RNN} models capture long-term dependencies and non-linear workload structure. Kumar et al.\ reported strong forecasting accuracy on cloud data-centre traces \cite{kumar2017lstm}. However, the cost of training, tuning, and serving recurrent models is harder to justify on a lightweight edge scheduling path, especially when inference must remain cheap and the prediction horizon is short.
+
+Related placement work further narrows the gap. Kasahara et al.\ use supervised learning for latency-aware microservice placement in edge environments, and Sang et al.\ study imitation-learning-based Kubernetes scheduling in edge-cloud scenarios \cite{kasahara2025supervised, sang2024imitation}. These studies show that learned decision support can improve orchestration quality, but they also tend to depend on richer training surfaces or broader policy-learning machinery than is desirable for a lightweight, auditable scheduler path.
+
+In time-series forecasting, \textit{naive baselines} provide reference lower bounds against which learned models are measured. The \textit{persistence forecast} (naive-last) predicts that the next value will equal the most recent observation, capturing the assumption that workload conditions remain locally stable. The \textit{window-average forecast} (naive-mean) predicts the mean of the $w$ most recent observations, smoothing short-term fluctuations. These methods require no training and incur negligible computational cost, making them standard sanity checks: a learned model that cannot outperform naive baselines offers no practical advantage over trivial extrapolation.
+
+Taken together, the literature supports the use of prediction in resource management, but it also suggests a design constraint that directly shapes this project: the most appropriate predictor for edge scheduling is not necessarily the most expressive one, where \textit{expressive} here means a model family capable of representing richer non-linear or long-range temporal structure, but one that offers sufficient short-horizon accuracy at low operational cost \cite{calheiros2015arima, toka2021scaling, kasahara2025supervised}.
+
+
+
+\subsubsection{Integration with Orchestration}
+
+Several strategies integrate machine learning directly into orchestration systems to improve scheduling and resource allocation.
+
+\textit{Reinforcement learning} (RL) schedulers learn scheduling policies through trial-and-error interaction with the cluster environment, optimising a reward signal that encodes objectives such as minimising pod latency, balancing node loads, and maximising throughput \cite{pattan2025reinforcement}. Song et al.\ proposed DQKS, a pluggable Kubernetes scheduler based on the Double Deep Q-Network algorithm, demonstrating that RL-based scheduling can adapt to changing workload patterns through continuous learning \cite{song2025dqks}. Benedetti et al.\ explored RL for resource-based autoscaling in serverless edge applications, showing that RL agents can learn effective scaling policies even under the resource constraints characteristic of edge deployments \cite{benedetti2022reinforcement}.
+
+\textit{Predictive autoscaling} enhances traditional reactive autoscaling by incorporating workload forecasts to pre-emptively adjust resource allocations. Toka et al.\ proposed a machine learning--based scaling management system for Kubernetes edge clusters that anticipates demand changes rather than reacting to them \cite{toka2021scaling}. Pranata et al.\ investigated the optimisation of serverless autoscaling metrics for edge computing performance \cite{pranata2023serverless}. These approaches confirm the value of forward-looking resource management, but their primary decision variable is scaling level rather than node choice at pod-placement time.
+
+\textit{Anomaly-triggered rescheduling} is a proactive maintenance strategy that relocates running pods to better-suited nodes when anomalies such as performance bottlenecks, resource exhaustion, or security threats are detected. Mdemaya et al.\ proposed HERCULE, a system that coordinates resource management using Kubernetes and machine learning to improve quality of service at the edge \cite{mdemaya2020hercule}. This approach recognises that migrating workloads \textit{before} node failure is more effective than reacting after degradation has occurred, but it still leaves open the question of how anomaly evidence should be combined with lightweight forward prediction during the initial placement decision.
+
+
+\subsection{Limitations of Existing Methods}
+
+The reviewed literature reveals a progression of increasingly sophisticated approaches to resource management in edge environments, each addressing shortcomings of its predecessors, yet none fully meeting the requirements of lightweight, intelligent scheduling for edge Kubernetes clusters.
+
+Table~\ref{tab:ch1-technique-comparison} summarises the main technique families reviewed above, their contribution, and the specific limitation that motivates the proposed hybrid approach.
+
+\begin{table}[h]
+\centering
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{p{2.9cm}p{3.0cm}p{3.0cm}p{5.0cm}}
+\hline
+\textbf{Technique family} & \textbf{Representative examples} & \textbf{Main strength} & \textbf{Main limitation for this project} \\
+\hline
+Reactive monitoring & Thresholds, z-scores, monitor-driven heuristics & Cheap and responsive to current node state & Backward-looking and noise-sensitive, so transient edge workloads can be handled poorly \\
+\hline
+Anomaly detection & K-means, NSA & Identifies nodes behaving abnormally from live telemetry & Usually yields a binary anomaly decision rather than a placement decision \\
+\hline
+Prediction & ARIMA, lightweight regression & Anticipates short-horizon resource demand & Can miss current abnormal behaviour if forecasting is used alone \\
+\hline
+Richer learned orchestration & Reinforcement learning, imitation learning & Can learn broader scheduling policies directly & Higher training, serving, and policy complexity reduce suitability for a lightweight, auditable edge path \\
+\hline
+Proposed direction & Hybrid anomaly-aware and prediction-informed scheduling & Combines current abnormality evidence with short-horizon load forecasting & Must still remain lightweight enough for live Kubernetes placement \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\renewcommand{\arraystretch}{1.0}
+\caption{Comparison of technique families reviewed in Chapter~\ref{chapter1} and the gap motivating the proposed scheduler.}
+\label{tab:ch1-technique-comparison}
+\end{table}
+
+The key limitation is therefore not that these techniques are ineffective in isolation, but that each leaves part of the scheduling problem unresolved. Reactive monitoring remains backward-looking, anomaly detection identifies abnormality without itself producing a placement policy, and prediction improves foresight but can miss current abnormal operating conditions if used alone \cite{pashaeehir2025kubedsm,fritzsche2024lightweight}.
+
+What remains missing in the literature is a lightweight system that \textit{combines} anomaly detection with resource prediction to inform placement directly. That gap motivates the proposed scheduler: one that uses anomaly awareness as a live safety signal while also using short-horizon forecasting to avoid nodes likely to become overloaded soon.
+
