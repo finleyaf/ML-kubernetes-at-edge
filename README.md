@@ -1,21 +1,30 @@
-# Dissertation Project
+# ML Kubernetes at Edge
 
 Anomaly-Aware Lightweight ML for Efficient Kubernetes Scheduling at the Edge.
 
-This repository contains the complete implementation and evaluation artifacts for a dissertation project that develops a lightweight Kubernetes scheduling pipeline for edge-style environments.
+This repository contains the complete implementation and evaluation artifacts for a  project that develops a lightweight Kubernetes scheduling pipeline for edge environments.
+
+**[Read the full Dissertation Report here](./report/)**
+
+## System Architecture
+
+### High-Level Decision Flow
+![System Design](./system-design.png)
+
+### Cluster Implementation & Orchestration
+![System Architecture](./system-architecture.jpg)
 
 ## Project summary
 
 - Designed a hybrid scheduler that combines:
-  - NSA-inspired anomaly monitoring on live Netdata telemetry,
-  - short-horizon node load prediction, and
-  - workload-aware node capacity scoring.
+  - NSA-inspired anomaly monitoring on live Netdata telemetry.
+  - Short horizon node load prediction.
+  - Workload aware node capacity scoring.
 - Implemented a complete development workflow from offline replication and model validation through to live matched-arm scheduler comparison.
-- Evaluated the system in a controlled edge-style setting and showed that the custom scheduler:
-  - increased the safe placement rate from 64.17% to 75.83%,
-  - reduced anomalous placements from 35.83% to 24.17%,
-  - preserved mean scheduling latency, and
-  - improved startup and total execution time by approximately 23%.
+- Evaluated the system in a controlled edge setting and showed that the custom scheduler:
+  - Increased the safe placement rate from 64.17% to 75.83%.
+  - Reduced anomalous placements from 35.83% to 24.17%.
+  - Preserved mean scheduling latency, and improved startup and total execution time by approximately 23%.
 
 ## Key contributions
 
@@ -43,8 +52,8 @@ For detailed reproduction or inspection, explore the relevant directories direct
 
 ## Technologies
 
-- Python 3
-- Kubernetes / K3s
+- Python
+- Kubernetes (K3s)
 - Netdata telemetry
 - scikit-learn, pandas, numpy
 - Bash orchestration and experiment automation
