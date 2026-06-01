@@ -9,10 +9,10 @@ This repository contains the complete implementation and evaluation artifacts fo
 ## System Architecture
 
 ### High-Level Decision Flow
-![System Design](./system-design.png)
+![System Design](./report/system-design.png)
 
 ### Cluster Implementation & Orchestration
-![System Architecture](./system-architecture.jpg)
+![System Architecture](./report/system-architecture.png)
 
 ## Project summary
 
